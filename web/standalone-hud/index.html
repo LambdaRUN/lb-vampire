@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <link rel="stylesheet" href="consent.css">
+    <link rel="stylesheet" href="feeding-status.css">
+
+    <title>LB-VAMPIRE HUD</title>
+</head>
+
+<body>
+    <div id="hudRoot">
+        <div
+            id="bloodHud"
+            class="hud-element blood-hud hidden"
+            data-hud-element="Blood"
+        >
+            <div class="editor-element-label">
+                BLOOD
+            </div>
+
+            <div class="blood-ring">
+                <svg
+                    class="ring-svg"
+                    viewBox="0 0 72 72"
+                >
+                    <circle
+                        class="ring-background"
+                        cx="36"
+                        cy="36"
+                        r="30"
+                    />
+
+                    <circle
+                        id="bloodProgress"
+                        class="ring-progress"
+                        cx="36"
+                        cy="36"
+                        r="30"
+                    />
+                </svg>
+
+                <div class="blood-content">
+                    <svg
+                        class="blood-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M12 2.5C12 2.5 5.5 10.1 5.5 14.5C5.5 18.1 8.4 21 12 21C15.6 21 18.5 18.1 18.5 14.5C18.5 10.1 12 2.5 12 2.5Z"
+                        />
+                    </svg>
+
+                    <span id="bloodValue">
+                        100
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div
+            id="sunHud"
+            class="hud-element sun-hud sun-safe"
+            data-hud-element="Sun"
+        >
+            <div class="sun-orb">
+
+                <svg
+                    class="sun-ring"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                >
+                    <circle
+                        class="sun-ring-background"
+                        cx="50"
+                        cy="50"
+                        r="44"
+                    ></circle>
+
+                    <circle
+                        class="sun-ring-state"
+                        cx="50"
+                        cy="50"
+                        r="44"
+                    ></circle>
+                </svg>
+
+
+                <div class="sun-icon">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="4"
+                        ></circle>
+
+                        <path
+                            d="
+                                M12 2V4
+                                M12 20V22
+                                M4.93 4.93L6.34 6.34
+                                M17.66 17.66L19.07 19.07
+                                M2 12H4
+                                M20 12H22
+                                M4.93 19.07L6.34 17.66
+                                M17.66 6.34L19.07 4.93
+                            "
+                        ></path>
+                    </svg>
+
+                </div>
+
+            </div>
+        </div>
+        <div
+            id="humanBloodHud"
+            class="hud-element human-blood-hud hidden"
+            data-hud-element="HumanBlood"
+        >
+            <div class="human-blood-orb">
+
+                <svg
+                    class="human-blood-ring"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                >
+                    <circle
+                        class="human-blood-ring-background"
+                        cx="50"
+                        cy="50"
+                        r="44"
+                    ></circle>
+
+                    <circle
+                        id="humanBloodProgress"
+                        class="human-blood-ring-progress"
+                        cx="50"
+                        cy="50"
+                        r="44"
+                    ></circle>
+                </svg>
+
+
+                <div class="human-blood-icon">
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="
+                                M12 2
+                                C12 2 6.5 8.2 6.5 13
+                                C6.5 16.6 8.9 19 12 19
+                                C15.1 19 17.5 16.6 17.5 13
+                                C17.5 8.2 12 2 12 2
+                                Z
+                            "
+                        ></path>
+                    </svg>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div
+        id="editorPanel"
+        class="editor-panel hidden"
+    >
+        <div class="editor-header">
+            <div>
+                <div class="editor-eyebrow">
+                    LB-VAMPIRE
+                </div>
+
+                <div class="editor-title">
+                    HUD Layout
+                </div>
+            </div>
+
+            <button
+                id="closeEditorButton"
+                class="icon-button"
+                type="button"
+                title="Cancel"
+            >
+                ×
+            </button>
+        </div>
+
+        <div class="editor-section">
+            <div class="section-label">
+                ELEMENT
+            </div>
+
+            <div
+                id="elementSelector"
+                class="element-selector"
+            ></div>
+        </div>
+
+        <div class="editor-section">
+            <div class="control-header">
+                <label for="scaleRange">
+                    Scale
+                </label>
+
+                <span id="scaleValue">
+                    100%
+                </span>
+            </div>
+
+            <input
+                id="scaleRange"
+                type="range"
+                min="0.65"
+                max="1.50"
+                step="0.05"
+                value="1.00"
+            >
+        </div>
+
+        <div class="editor-section">
+            <div class="control-header">
+                <label for="opacityRange">
+                    Opacity
+                </label>
+
+                <span id="opacityValue">
+                    100%
+                </span>
+            </div>
+
+            <input
+                id="opacityRange"
+                type="range"
+                min="0.35"
+                max="1.00"
+                step="0.05"
+                value="1.00"
+            >
+        </div>
+
+        <div class="editor-help">
+            HUD öğesini mouse ile sürükleyerek
+            istediğin konuma taşı.
+        </div>
+
+        <div class="editor-actions">
+            <button
+                id="resetButton"
+                class="button secondary"
+                type="button"
+            >
+                Reset
+            </button>
+
+            <button
+                id="cancelButton"
+                class="button secondary"
+                type="button"
+            >
+                Cancel
+            </button>
+
+            <button
+                id="saveButton"
+                class="button primary"
+                type="button"
+            >
+                Save & Close
+            </button>
+        </div>
+
+        <div class="editor-footer">
+            ESC — Cancel
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="consent.js"></script>
+    <script src="feeding-status.js"></script>
+</body>
+</html>

@@ -1,0 +1,1155 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background: transparent;
+
+    pointer-events: none;
+
+    user-select: none;
+}
+
+body.editor-active {
+    pointer-events: auto;
+}
+
+/* =========================================================
+   HUD ELEMENT BASE
+========================================================= */
+
+.hud-element {
+    position: fixed;
+
+    transform-origin: bottom left;
+
+    transform:
+        scale(var(--hud-scale, 1));
+
+    opacity:
+        var(--hud-opacity, 1);
+
+    transition:
+        opacity 180ms ease;
+}
+
+.hud-element.hidden {
+    opacity: 0 !important;
+    visibility: hidden;
+}
+
+body.editor-active .hud-element {
+    pointer-events: auto;
+
+    cursor: grab;
+}
+
+body.editor-active .hud-element:active {
+    cursor: grabbing;
+}
+
+body.editor-active .hud-element.selected::before {
+    content: "";
+
+    position: absolute;
+
+    inset: -8px;
+
+    border:
+        1px dashed
+        rgba(186, 31, 50, 0.85);
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+    box-shadow:
+        0 0 12px
+        rgba(157, 27, 42, 0.15);
+}
+
+.editor-element-label {
+    display: none;
+
+    position: absolute;
+
+    left: 50%;
+    bottom: calc(100% + 13px);
+
+    transform:
+        translateX(-50%);
+
+    padding:
+        4px 7px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.08);
+
+    border-radius:
+        4px;
+
+    background:
+        rgba(12, 12, 14, 0.92);
+
+    color:
+        rgba(255, 255, 255, 0.86);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size:
+        9px;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        0.08em;
+
+    pointer-events:
+        none;
+
+    white-space:
+        nowrap;
+}
+
+body.editor-active
+.hud-element.selected
+.editor-element-label {
+    display: block;
+}
+
+/* =========================================================
+   BLOOD HUD
+========================================================= */
+
+.blood-hud {
+    left: 1.8vw;
+    bottom: 7vh;
+
+    width: 64px;
+    height: 64px;
+}
+
+.blood-ring {
+    position: relative;
+
+    width: 64px;
+    height: 64px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(18, 18, 20, 0.90) 0%,
+            rgba(10, 10, 12, 0.90) 72%,
+            rgba(5, 5, 6, 0.94) 100%
+        );
+
+    box-shadow:
+        0 4px 16px
+        rgba(0, 0, 0, 0.35),
+
+        inset 0 0 12px
+        rgba(255, 255, 255, 0.02);
+}
+
+.ring-svg {
+    position: absolute;
+
+    width: 72px;
+    height: 72px;
+
+    left: -4px;
+    top: -4px;
+
+    transform:
+        rotate(-90deg);
+}
+
+.ring-background,
+.ring-progress {
+    fill: none;
+
+    stroke-width: 4;
+
+    cx: 36;
+    cy: 36;
+    r: 30;
+}
+
+.ring-background {
+    stroke:
+        rgba(255, 255, 255, 0.10);
+}
+
+.ring-progress {
+    stroke:
+        #9d1b2a;
+
+    stroke-linecap:
+        round;
+
+    stroke-dasharray:
+        188.4956;
+
+    stroke-dashoffset:
+        0;
+
+    transition:
+        stroke-dashoffset 450ms ease,
+        stroke 250ms ease;
+}
+
+.blood-content {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 1px;
+}
+
+.blood-icon {
+    width: 16px;
+    height: 16px;
+
+    fill:
+        #bd2739;
+
+    filter:
+        drop-shadow(
+            0 0 4px
+            rgba(189, 39, 57, 0.30)
+        );
+
+    transition:
+        fill 250ms ease,
+        filter 250ms ease;
+}
+
+#bloodValue {
+    font-family:
+        Inter,
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    color:
+        rgba(255, 255, 255, 0.94);
+
+    text-shadow:
+        0 1px 3px
+        rgba(0, 0, 0, 0.85);
+}
+
+/* =========================================================
+   BLOOD STATES
+========================================================= */
+
+.blood-hud.low .blood-ring {
+    animation:
+        lowPulse
+        2.2s
+        ease-in-out
+        infinite;
+}
+
+.blood-hud.low .blood-icon {
+    filter:
+        drop-shadow(
+            0 0 6px
+            rgba(189, 39, 57, 0.50)
+        );
+}
+
+.blood-hud.critical .blood-ring {
+    animation:
+        criticalPulse
+        1s
+        ease-in-out
+        infinite;
+}
+
+.blood-hud.critical .ring-progress {
+    stroke:
+        #d6293f;
+}
+
+.blood-hud.critical .blood-icon {
+    fill:
+        #e13248;
+
+    filter:
+        drop-shadow(
+            0 0 9px
+            rgba(225, 50, 72, 0.80)
+        );
+}
+
+@keyframes lowPulse {
+    0%,
+    100% {
+        transform:
+            scale(1);
+    }
+
+    50% {
+        transform:
+            scale(1.035);
+    }
+}
+
+@keyframes criticalPulse {
+    0%,
+    100% {
+        transform:
+            scale(1);
+
+        filter:
+            brightness(1);
+    }
+
+    50% {
+        transform:
+            scale(1.075);
+
+        filter:
+            brightness(1.35);
+    }
+}
+
+/* =========================================================
+   HUD EDITOR
+========================================================= */
+
+.editor-panel {
+    position: fixed;
+
+    right: 2.2vw;
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    width: 310px;
+
+    padding: 18px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.07);
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(18, 18, 21, 0.97),
+            rgba(9, 9, 11, 0.97)
+        );
+
+    box-shadow:
+        0 18px 55px
+        rgba(0, 0, 0, 0.45);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    color:
+        rgba(255, 255, 255, 0.92);
+
+    pointer-events:
+        auto;
+}
+
+.editor-panel.hidden {
+    display: none;
+}
+
+.editor-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+.editor-eyebrow {
+    margin-bottom: 4px;
+
+    color:
+        #a51d2e;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.15em;
+}
+
+.editor-title {
+    font-size:
+        20px;
+
+    font-weight:
+        700;
+}
+
+.icon-button {
+    width: 30px;
+    height: 30px;
+
+    border: none;
+
+    border-radius:
+        5px;
+
+    background:
+        rgba(255, 255, 255, 0.055);
+
+    color:
+        rgba(255, 255, 255, 0.70);
+
+    font-size:
+        20px;
+
+    cursor:
+        pointer;
+
+    transition:
+        background 120ms ease,
+        color 120ms ease;
+}
+
+.icon-button:hover {
+    background:
+        rgba(255, 255, 255, 0.10);
+
+    color:
+        white;
+}
+
+.editor-section {
+    margin-bottom:
+        18px;
+}
+
+.section-label {
+    margin-bottom:
+        8px;
+
+    color:
+        rgba(255, 255, 255, 0.42);
+
+    font-size:
+        9px;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        0.12em;
+}
+
+.element-selector {
+    display:
+        flex;
+
+    gap:
+        7px;
+
+    flex-wrap:
+        wrap;
+}
+
+.element-button {
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.08);
+
+    border-radius:
+        5px;
+
+    padding:
+        7px 10px;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+
+    color:
+        rgba(255, 255, 255, 0.68);
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
+
+    transition:
+        border-color 120ms ease,
+        background 120ms ease,
+        color 120ms ease;
+}
+
+.element-button:hover {
+    color:
+        rgba(255, 255, 255, 0.95);
+}
+
+.element-button.active {
+    border-color:
+        rgba(172, 29, 47, 0.70);
+
+    background:
+        rgba(157, 27, 42, 0.15);
+
+    color:
+        #ffffff;
+}
+
+.control-header {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    margin-bottom:
+        8px;
+
+    font-size:
+        12px;
+}
+
+.control-header label {
+    color:
+        rgba(255, 255, 255, 0.74);
+}
+
+.control-header span {
+    color:
+        rgba(255, 255, 255, 0.46);
+
+    font-size:
+        11px;
+}
+
+input[type="range"] {
+    width:
+        100%;
+
+    cursor:
+        pointer;
+
+    accent-color:
+        #a51d2e;
+}
+
+.editor-help {
+    margin-top:
+        4px;
+
+    margin-bottom:
+        18px;
+
+    padding:
+        10px 11px;
+
+    border-left:
+        2px solid
+        #8e1827;
+
+    background:
+        rgba(157, 27, 42, 0.07);
+
+    color:
+        rgba(255, 255, 255, 0.48);
+
+    font-size:
+        11px;
+
+    line-height:
+        1.45;
+}
+
+.editor-actions {
+    display:
+        grid;
+
+    grid-template-columns:
+        0.75fr
+        0.75fr
+        1.4fr;
+
+    gap:
+        7px;
+}
+
+.button {
+    min-height:
+        34px;
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius:
+        5px;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+
+    cursor:
+        pointer;
+
+    transition:
+        transform 100ms ease,
+        background 120ms ease,
+        border-color 120ms ease;
+}
+
+.button:active {
+    transform:
+        translateY(1px);
+}
+
+.button.secondary {
+    border-color:
+        rgba(255, 255, 255, 0.08);
+
+    background:
+        rgba(255, 255, 255, 0.045);
+
+    color:
+        rgba(255, 255, 255, 0.68);
+}
+
+.button.secondary:hover {
+    background:
+        rgba(255, 255, 255, 0.08);
+
+    color:
+        white;
+}
+
+.button.primary {
+    border-color:
+        rgba(188, 35, 54, 0.85);
+
+    background:
+        #941829;
+
+    color:
+        white;
+}
+
+.button.primary:hover {
+    background:
+        #aa1d30;
+}
+
+.editor-footer {
+    margin-top:
+        11px;
+
+    text-align:
+        center;
+
+    color:
+        rgba(255, 255, 255, 0.22);
+
+    font-size:
+        9px;
+
+    letter-spacing:
+        0.05em;
+}
+
+/* =====================================================
+   SUN HUD
+===================================================== */
+
+.sun-hud {
+    position: fixed;
+
+    left: 6vw;
+    bottom: 7vh;
+
+    width: 58px;
+    height: 58px;
+
+    transform: scale(
+        var(--hud-scale, 1)
+    );
+
+    transform-origin: center center;
+
+    opacity:
+        var(--hud-opacity, 1);
+
+    pointer-events: none;
+
+    transition:
+        opacity 180ms ease,
+        filter 180ms ease;
+}
+
+
+.sun-orb {
+    position: relative;
+
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(10, 10, 12, 0.78);
+
+    box-shadow:
+        0 4px 18px
+        rgba(0, 0, 0, 0.35);
+}
+
+
+.sun-ring {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    transform:
+        rotate(-90deg);
+}
+
+
+.sun-ring-background {
+    fill: none;
+
+    stroke:
+        rgba(255, 255, 255, 0.10);
+
+    stroke-width: 5;
+}
+
+
+.sun-ring-state {
+    fill: none;
+
+    stroke:
+        rgba(255, 255, 255, 0.25);
+
+    stroke-width: 5;
+
+    stroke-linecap: round;
+
+    transition:
+        stroke 250ms ease,
+        opacity 250ms ease;
+}
+
+
+.sun-icon {
+    position: relative;
+
+    z-index: 2;
+
+    width: 25px;
+    height: 25px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        opacity 250ms ease,
+        transform 250ms ease,
+        filter 250ms ease;
+}
+
+
+.sun-icon svg {
+    width: 100%;
+    height: 100%;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+}
+
+
+/* =====================================================
+   SAFE
+===================================================== */
+
+.sun-hud.sun-safe {
+    color:
+        rgba(255, 255, 255, 0.45);
+}
+
+
+.sun-hud.sun-safe
+.sun-ring-state {
+    stroke:
+        rgba(255, 255, 255, 0.20);
+}
+
+
+.sun-hud.sun-safe
+.sun-icon {
+    opacity: 0.55;
+}
+
+
+/* =====================================================
+   REDUCED
+===================================================== */
+
+.sun-hud.sun-reduced {
+    color:
+        rgba(255, 210, 90, 0.95);
+}
+
+
+.sun-hud.sun-reduced
+.sun-ring-state {
+    stroke:
+        rgba(255, 195, 70, 0.85);
+}
+
+
+.sun-hud.sun-reduced
+.sun-icon {
+    opacity: 1;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(255, 195, 70, 0.40)
+        );
+}
+
+
+/* =====================================================
+   DIRECT
+===================================================== */
+
+.sun-hud.sun-direct {
+    color:
+        rgba(255, 105, 65, 1);
+}
+
+
+.sun-hud.sun-direct
+.sun-ring-state {
+    stroke:
+        rgba(255, 90, 60, 1);
+}
+
+
+.sun-hud.sun-direct
+.sun-icon {
+    opacity: 1;
+
+    filter:
+        drop-shadow(
+            0 0 7px
+            rgba(255, 75, 45, 0.75)
+        );
+
+    animation:
+        sunDirectPulse
+        1.15s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes sunDirectPulse {
+    0%,
+    100% {
+        transform:
+            scale(1);
+
+        opacity:
+            0.85;
+    }
+
+    50% {
+        transform:
+            scale(1.16);
+
+        opacity:
+            1;
+    }
+}
+
+
+/* =====================================================
+   HUD EDITOR
+===================================================== */
+
+body.editor-active .sun-hud {
+    pointer-events: auto;
+}
+
+/* =====================================================
+   HUMAN BLOOD HUD
+===================================================== */
+
+.human-blood-hud {
+    position: fixed;
+
+    left: 1.8vw;
+    bottom: 7vh;
+
+    width: 58px;
+    height: 58px;
+
+    transform:
+        scale(var(--hud-scale, 1));
+
+    transform-origin:
+        center center;
+
+    opacity:
+        var(--hud-opacity, 1);
+
+    pointer-events: none;
+
+    transition:
+        opacity 220ms ease,
+        filter 220ms ease;
+}
+
+
+.human-blood-orb {
+    position: relative;
+
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(10, 10, 12, 0.78);
+
+    box-shadow:
+        0 4px 18px
+        rgba(0, 0, 0, 0.35);
+}
+
+
+.human-blood-ring {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    transform:
+        rotate(-90deg);
+}
+
+
+.human-blood-ring-background {
+    fill: none;
+
+    stroke:
+        rgba(255, 255, 255, 0.10);
+
+    stroke-width: 5;
+}
+
+
+.human-blood-ring-progress {
+    fill: none;
+
+    stroke:
+        rgba(185, 55, 65, 0.75);
+
+    stroke-width: 5;
+
+    stroke-linecap: round;
+
+    transition:
+        stroke-dashoffset 350ms ease,
+        stroke 250ms ease;
+}
+
+
+.human-blood-icon {
+    position: relative;
+
+    z-index: 2;
+
+    width: 23px;
+    height: 23px;
+
+    color:
+        rgba(215, 75, 85, 0.85);
+
+    transition:
+        color 250ms ease,
+        opacity 250ms ease,
+        transform 250ms ease,
+        filter 250ms ease;
+}
+
+
+.human-blood-icon svg {
+    width: 100%;
+    height: 100%;
+
+    fill:
+        currentColor;
+
+    stroke: none;
+}
+
+
+/* =====================================================
+   BLOOD LOSS
+===================================================== */
+
+.human-blood-hud.human-loss
+.human-blood-ring-progress {
+    stroke:
+        rgba(190, 65, 75, 0.75);
+}
+
+
+.human-blood-hud.human-low
+.human-blood-ring-progress {
+    stroke:
+        rgba(220, 75, 75, 0.90);
+}
+
+
+.human-blood-hud.human-critical
+.human-blood-ring-progress {
+    stroke:
+        rgba(235, 55, 55, 1);
+}
+
+
+.human-blood-hud.human-critical
+.human-blood-icon {
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(235, 55, 55, 0.5)
+        );
+}
+
+
+.human-blood-hud.human-severe
+.human-blood-ring-progress {
+    stroke:
+        rgba(255, 35, 35, 1);
+}
+
+
+.human-blood-hud.human-severe
+.human-blood-icon {
+    color:
+        rgba(255, 45, 45, 1);
+
+    filter:
+        drop-shadow(
+            0 0 7px
+            rgba(255, 35, 35, 0.75)
+        );
+
+    animation:
+        humanBloodPulse
+        0.9s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes humanBloodPulse {
+    0%,
+    100% {
+        transform:
+            scale(1);
+
+        opacity:
+            0.75;
+    }
+
+    50% {
+        transform:
+            scale(1.15);
+
+        opacity:
+            1;
+    }
+}
+
+
+body.editor-active
+.human-blood-hud {
+    pointer-events: auto;
+}

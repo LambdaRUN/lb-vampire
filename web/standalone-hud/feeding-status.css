@@ -1,0 +1,293 @@
+/* =========================================================
+   FEEDING STATUS
+========================================================= */
+
+.feeding-status {
+    position: fixed;
+
+    left: 50%;
+    bottom: 7vh;
+
+    transform:
+        translateX(-50%);
+
+    width: 410px;
+
+    z-index: 9000;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    pointer-events: none;
+}
+
+
+.feeding-status.hidden {
+    display: none;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.feeding-status-card {
+    padding:
+        15px 17px 13px 17px;
+
+    border-radius: 12px;
+
+    background:
+        rgba(10, 10, 13, 0.91);
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.06);
+}
+
+
+/* =========================================================
+   TOP
+========================================================= */
+
+.feeding-status-top {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+}
+
+
+.feeding-status-label {
+    margin-bottom: 3px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: 1.8px;
+
+    color:
+        rgba(198, 59, 70, 0.90);
+}
+
+
+.feeding-status-target {
+    max-width: 260px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color:
+        rgba(255, 255, 255, 0.92);
+}
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+.feeding-status-state {
+    padding:
+        5px 8px;
+
+    border-radius: 6px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+.feeding-status-state.stable {
+    color:
+        rgba(210, 210, 215, 0.88);
+
+    background:
+        rgba(255, 255, 255, 0.07);
+}
+
+
+.feeding-status-state.low {
+    color:
+        rgba(225, 150, 94, 1);
+
+    background:
+        rgba(205, 105, 51, 0.12);
+}
+
+
+.feeding-status-state.critical {
+    color:
+        rgba(235, 84, 91, 1);
+
+    background:
+        rgba(220, 55, 65, 0.13);
+}
+
+
+.feeding-status-state.severe {
+    color:
+        rgba(255, 50, 58, 1);
+
+    background:
+        rgba(240, 35, 45, 0.16);
+
+    animation:
+        feedingStatusPulse
+        0.9s
+        ease-in-out
+        infinite;
+}
+
+
+/* =========================================================
+   TRACK
+========================================================= */
+
+.feeding-status-track {
+    margin-top: 12px;
+
+    width: 100%;
+    height: 4px;
+
+    overflow: hidden;
+
+    border-radius: 99px;
+
+    background:
+        rgba(255, 255, 255, 0.08);
+}
+
+
+.feeding-status-progress {
+    width: 100%;
+    height: 100%;
+
+    border-radius: inherit;
+
+    transition:
+        width 250ms linear,
+        background 180ms ease;
+}
+
+
+.feeding-status-progress.stable {
+    background:
+        rgba(174, 50, 61, 0.72);
+}
+
+
+.feeding-status-progress.low {
+    background:
+        rgba(203, 82, 63, 0.85);
+}
+
+
+.feeding-status-progress.critical {
+    background:
+        rgba(224, 55, 66, 0.95);
+}
+
+
+.feeding-status-progress.severe {
+    background:
+        rgba(255, 35, 45, 1);
+}
+
+
+/* =========================================================
+   BOTTOM
+========================================================= */
+
+.feeding-status-bottom {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    margin-top: 9px;
+
+    gap: 15px;
+
+    font-size: 9px;
+
+    color:
+        rgba(255, 255, 255, 0.38);
+}
+
+
+.feeding-status-stop {
+    display: flex;
+
+    align-items:
+        center;
+
+    gap: 6px;
+
+    white-space: nowrap;
+
+    color:
+        rgba(255, 255, 255, 0.62);
+}
+
+
+.feeding-status-stop kbd {
+    min-width: 21px;
+
+    padding:
+        3px 5px;
+
+    border-radius: 4px;
+
+    text-align: center;
+
+    font-family: inherit;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    color:
+        rgba(255, 255, 255, 0.88);
+
+    background:
+        rgba(255, 255, 255, 0.10);
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.09);
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+@keyframes feedingStatusPulse {
+    0%,
+    100% {
+        opacity: 0.70;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

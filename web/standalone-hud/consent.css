@@ -1,0 +1,307 @@
+/* =========================================================
+   FEEDING CONSENT
+========================================================= */
+
+.feeding-consent {
+    position: fixed;
+
+    left: 50%;
+    bottom: 11vh;
+
+    transform:
+        translateX(-50%);
+
+    width: 390px;
+
+    /*
+        Diğer NUI elementlerinin üstünde olsun.
+    */
+    z-index: 2147483647;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    opacity: 1;
+
+    /*
+        Root boş alanlarda input yakalamasın.
+        Yalnız card tıklanabilir olacak.
+    */
+    pointer-events: none;
+
+    transition:
+        opacity 180ms ease,
+        transform 180ms ease;
+}
+
+
+.feeding-consent.hidden {
+    display: none;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.feeding-consent-card {
+    position: relative;
+
+    overflow: hidden;
+
+    padding:
+        22px 22px 18px 22px;
+
+    border-radius: 14px;
+
+    background:
+        rgba(11, 11, 14, 0.94);
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.07);
+
+    /*
+        BOX SHADOW YOK.
+        FiveM CEF üzerinde siyah blok oluşturabiliyor.
+    */
+
+    pointer-events: auto;
+
+    user-select: none;
+}
+
+
+.feeding-consent-accent {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    width: 3px;
+    height: 100%;
+
+    background:
+        rgba(175, 36, 48, 0.95);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.feeding-consent-header {
+    margin-bottom: 8px;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    color:
+        rgba(202, 65, 76, 0.95);
+
+    pointer-events: none;
+}
+
+
+.feeding-consent-title {
+    font-size: 18px;
+
+    font-weight: 600;
+
+    line-height: 1.35;
+
+    color:
+        rgba(255, 255, 255, 0.96);
+
+    pointer-events: none;
+}
+
+
+.feeding-consent-title span {
+    color:
+        rgba(226, 82, 93, 1);
+}
+
+
+.feeding-consent-description {
+    margin-top: 8px;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+    color:
+        rgba(255, 255, 255, 0.55);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+.feeding-consent-timer {
+    position: relative;
+
+    margin-top: 18px;
+
+    width: 100%;
+    height: 3px;
+
+    overflow: hidden;
+
+    border-radius: 99px;
+
+    background:
+        rgba(255, 255, 255, 0.09);
+
+    pointer-events: none;
+}
+
+
+.feeding-consent-progress {
+    width: 100%;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background:
+        rgba(194, 55, 66, 0.92);
+
+    pointer-events: none;
+}
+
+
+.feeding-consent-time {
+    margin-top: 5px;
+
+    text-align: right;
+
+    font-size: 10px;
+
+    letter-spacing: 0.5px;
+
+    color:
+        rgba(255, 255, 255, 0.40);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   BUTTON AREA
+========================================================= */
+
+.feeding-consent-actions {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 15px;
+
+    /*
+        Kritik.
+    */
+    position: relative;
+
+    z-index: 10;
+
+    pointer-events: auto;
+}
+
+
+.feeding-consent-button {
+    flex: 1;
+
+    height: 38px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    pointer-events: auto;
+
+    user-select: none;
+
+    transition:
+        background 150ms ease,
+        transform 150ms ease,
+        opacity 150ms ease;
+}
+
+
+.feeding-consent-button:hover {
+    transform:
+        translateY(-1px);
+}
+
+
+.feeding-consent-button:active {
+    transform:
+        translateY(0);
+
+    opacity: 0.82;
+}
+
+
+.feeding-consent-button:disabled {
+    cursor: default;
+
+    opacity: 0.45;
+
+    transform: none;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   DECLINE
+========================================================= */
+
+.feeding-consent-button.decline {
+    background:
+        rgba(255, 255, 255, 0.07);
+
+    color:
+        rgba(255, 255, 255, 0.72);
+}
+
+
+.feeding-consent-button.decline:hover {
+    background:
+        rgba(255, 255, 255, 0.11);
+}
+
+
+/* =========================================================
+   ACCEPT
+========================================================= */
+
+.feeding-consent-button.accept {
+    background:
+        rgba(166, 38, 49, 0.95);
+
+    color:
+        rgba(255, 255, 255, 0.96);
+}
+
+
+.feeding-consent-button.accept:hover {
+    background:
+        rgba(190, 44, 56, 1);
+}
