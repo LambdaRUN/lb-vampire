@@ -292,11 +292,12 @@ LBVampire.Framework.RegisterCommand(
 
             local message =
                 (
-                    'Player %s | CitizenID: %s | Vampire: YES | Blood: %.2f | Embrace: %s'
+                    'Player %s | CitizenID: %s | Vampire: YES | Blood: %.2f | Torpor: %d | Embrace: %s'
                 ):format(
                     targetSource,
                     state.citizenId,
                     state.blood,
+                    tonumber(state.torporStage) or 0,
                     state.canEmbrace
                         and 'YES'
                         or 'NO'
@@ -323,6 +324,12 @@ LBVampire.Framework.RegisterCommand(
                     state.blood
                 )
             )
+
+            print(('Torpor Stage: %d | Collapse Started: %s | Kin Calls: %d'):format(
+                tonumber(state.torporStage) or 0,
+                tostring(state.collapseStartedAt or 'NONE'),
+                tonumber(state.kinCalls) or 0
+            ))
 
             print(
                 ('Can Embrace: %s'):format(

@@ -15,6 +15,9 @@
 
     <link rel="stylesheet" href="consent.css">
     <link rel="stylesheet" href="feeding-status.css">
+    <link rel="stylesheet" href="scent-tracking.css">
+    <link rel="stylesheet" href="ability-menu.css">
+    <link rel="stylesheet" href="torpor.css">
 
     <title>LB-VAMPIRE HUD</title>
 </head>
@@ -177,6 +180,88 @@
         </div>
     </div>
 
+
+
+    <div id="scentTracking" class="scent-tracking" aria-hidden="true">
+        <div class="scent-filter"></div>
+
+        <div id="scentPulse" class="scent-pulse">
+            <div class="scent-orb" aria-hidden="true">
+                <span class="scent-orb-ring ring-one"></span>
+                <span class="scent-orb-ring ring-two"></span>
+                <span class="scent-orb-core"></span>
+            </div>
+
+            <div class="scent-copy">
+                <div class="scent-eyebrow">KAN KOKUSU</div>
+                <div id="scentStrength" class="scent-strength">ZAYIF KOKU</div>
+                <div class="scent-direction-row">
+                    <span class="scent-direction-mark" aria-hidden="true"></span>
+                    <span id="scentDirection" class="scent-direction">ÖNÜNDE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="abilityMenu" class="ability-menu" aria-hidden="true">
+        <div class="ability-menu-backdrop"></div>
+        <div class="ability-menu-vignette"></div>
+
+        <div class="ability-sigil-shell">
+            <div id="abilitySigil" class="ability-sigil-stage">
+                <svg id="abilityVeins" class="ability-veins" aria-hidden="true"></svg>
+                <div id="abilityNodes" class="ability-nodes"></div>
+
+                <div class="ability-core" aria-hidden="true">
+                    <svg class="ability-core-mark" viewBox="0 0 64 64">
+                        <path d="M32 5 42 22l-5 10 8 17-13 10-13-10 8-17-5-10L32 5Z"></path>
+                        <path d="M32 15v34M23 29l9 6 9-6"></path>
+                    </svg>
+                    <div class="ability-core-blood"><strong id="abilityCoreBlood">0</strong> / <span id="abilityCoreMaxBlood">100</span></div>
+                </div>
+            </div>
+
+            <aside class="ability-inspector" aria-live="polite">
+                <div class="ability-inspector-eyebrow">Blood Sigil</div>
+                <div id="abilityInspectorTitle" class="ability-inspector-title">Blood Sigil</div>
+                <div id="abilityInspectorDescription" class="ability-inspector-description">
+                    Mouse ile bir mühre yönel. Tuşu bıraktığında seçili ability etkinleşir.
+                </div>
+                <div class="ability-inspector-separator"></div>
+                <div class="ability-inspector-row">
+                    <span>Kan Maliyeti</span>
+                    <span id="abilityInspectorCost" class="ability-inspector-value is-blood">—</span>
+                </div>
+                <div class="ability-inspector-row">
+                    <span>Bekleme</span>
+                    <span id="abilityInspectorCooldown" class="ability-inspector-value">—</span>
+                </div>
+                <div id="abilityInspectorStatus" class="ability-inspector-status">Merkeze dönerek iptal et</div>
+                <div class="ability-inspector-hint">Tuşu bırak — seç / merkeze dön — iptal</div>
+            </aside>
+
+            <div class="ability-menu-footer"><strong>LB-VAMPIRE</strong> · BLOOD SIGIL</div>
+        </div>
+
+        <div id="abilityWisp" class="ability-wisp blood-wisp" aria-hidden="true"></div>
+    </div>
+
+    <div id="torporCard" class="torpor-card" aria-hidden="true">
+        <div class="torpor-eyebrow">LB-VAMPIRE · SURVIVAL STATE</div>
+        <div class="torpor-main-row">
+            <h2 id="torporTitle" class="torpor-title">KAN REZERVİ TÜKENDİ</h2>
+            <div id="torporTimer" class="torpor-timer">05:00</div>
+        </div>
+        <div id="torporDescription" class="torpor-description"></div>
+        <div class="torpor-divider"></div>
+        <div id="torporAction" class="torpor-action">
+            <span id="torporActionKey" class="torpor-key">H</span>
+            <span id="torporActionText">Soydaşlarla iletişim kur</span>
+        </div>
+    </div>
+
+
     <div
         id="editorPanel"
         class="editor-panel hidden"
@@ -294,5 +379,9 @@
     <script src="app.js"></script>
     <script src="consent.js"></script>
     <script src="feeding-status.js"></script>
+    <script src="scent-tracking.js"></script>
+    <script src="ability-menu-core.js"></script>
+    <script src="ability-menu.js"></script>
+    <script src="torpor.js"></script>
 </body>
 </html>

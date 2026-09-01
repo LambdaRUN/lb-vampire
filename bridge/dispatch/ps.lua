@@ -90,6 +90,104 @@ end
 
 
 ---------------------------------------------------------
+-- PLAYER ONLINE
+---------------------------------------------------------
+
+local function IsPlayerOnline(
+    source
+)
+    source =
+        tonumber(
+            source
+        )
+
+
+    if not source
+        or source <= 0 then
+
+
+        return false
+    end
+
+
+    return GetPlayerName(
+        source
+    ) ~= nil
+end
+
+
+---------------------------------------------------------
+-- RELAY PLAYER
+--
+-- PS-Dispatch'in resmi API akışı:
+--
+-- CLIENT
+--      ↓
+-- TriggerServerEvent
+--      ↓
+-- ps-dispatch:server:notify
+--
+-- Bu nedenle LB-VAMPIRE server bir online client'ı
+-- yalnızca transport/relay olarak kullanır.
+---------------------------------------------------------
+
+local function ResolveRelaySource(
+    preferredSource
+)
+    -----------------------------------------------------
+    -- Olayı başlatan oyuncu hâlâ online ise
+    -- öncelikle onu kullan.
+    -----------------------------------------------------
+
+    if IsPlayerOnline(
+        preferredSource
+    ) then
+
+
+        return tonumber(
+            preferredSource
+        )
+    end
+
+
+    -----------------------------------------------------
+    -- Preferred source yoksa herhangi bir online
+    -- oyuncu relay olabilir.
+    --
+    -- Relay oyuncunun polis olması gerekmez.
+    -- PS-Dispatch server daha sonra alert'i uygun
+    -- job'lara kendisi dağıtır.
+    -----------------------------------------------------
+
+    local players =
+        GetPlayers()
+
+
+    for i = 1,
+        #players do
+
+
+        local playerSource =
+            tonumber(
+                players[i]
+            )
+
+
+        if IsPlayerOnline(
+            playerSource
+        ) then
+
+
+            return playerSource
+        end
+    end
+
+
+    return nil
+end
+
+
+---------------------------------------------------------
 -- SEND
 ---------------------------------------------------------
 
@@ -100,12 +198,20 @@ function Provider.Send(
         data or {}
 
 
+    -----------------------------------------------------
+    -- RESOURCE
+    -----------------------------------------------------
+
     if not Provider.IsAvailable() then
 
         return false,
             'ps_dispatch_not_started'
     end
 
+
+    -----------------------------------------------------
+    -- COORDS
+    -----------------------------------------------------
 
     local coords =
         data.coords
@@ -118,6 +224,10 @@ function Provider.Send(
     end
 
 
+    -----------------------------------------------------
+    -- PROFILE
+    -----------------------------------------------------
+
     local profile =
         GetProfile(
             data.kind
@@ -125,7 +235,27 @@ function Provider.Send(
 
 
     -----------------------------------------------------
-    -- PS DISPATCH DATA
+    -- RELAY CLIENT
+    -----------------------------------------------------
+
+    local relaySource =
+        ResolveRelaySource(
+            data.source
+        )
+
+
+    if not relaySource then
+
+        return false,
+            'no_relay_player'
+    end
+
+
+    -----------------------------------------------------
+    -- DISPATCH DATA
+    --
+    -- Vector3'ü client tarafında oluşturacağız.
+    -- Network transferinde plain table kullanıyoruz.
     -----------------------------------------------------
 
     local dispatchData = {
@@ -165,37 +295,33 @@ function Provider.Send(
             )
             or 2,
 
-        coords =
-            vector3(
+        coords = {
 
+            x =
                 tonumber(
                     coords.x
                 )
                 or 0.0,
 
+            y =
                 tonumber(
                     coords.y
                 )
                 or 0.0,
 
+            z =
                 tonumber(
                     coords.z
                 )
                 or 0.0
-            ),
+        },
 
         -------------------------------------------------
-        -- PS UI bu alanı gösterebilir.
-        -- Server-side street native bağımlılığı
-        -- yaratmamak için genel başlık kullanıyoruz.
+        -- Client gerçek street name üretmeye çalışacak.
         -------------------------------------------------
 
         street =
-            tostring(
-                data.street
-                or data.title
-                or 'Bilinmeyen Bölge'
-            ),
+            data.street,
 
         heading =
             tonumber(
@@ -207,23 +333,21 @@ function Provider.Send(
             data.jobs
             or profile.Jobs
             or {
-                'leo'
+                'leo',
+                'police'
             }
     }
 
 
     -----------------------------------------------------
-    -- ÖNEMLİ:
-    --
-    -- Güncel ps-dispatch server/main.lua bu eventte
-    -- source kullanmadan dispatch datasını kaydediyor
-    -- ve clientlara broadcast ediyor.
-    --
-    -- Bu yüzden server -> local TriggerEvent uygundur.
+    -- SERVER -> LB-VAMPIRE CLIENT RELAY
     -----------------------------------------------------
 
-    TriggerEvent(
-        'ps-dispatch:server:notify',
+    TriggerClientEvent(
+        'lb-vampire:client:psDispatchRelay',
+
+        relaySource,
+
         dispatchData
     )
 
@@ -232,8 +356,12 @@ function Provider.Send(
 
         print(
             (
-                '^2[LB-VAMPIRE]^7 PS dispatch sent | CodeName: %s | Code: %s | %s'
+                '^2[LB-VAMPIRE]^7 PS dispatch relay requested | Relay: %s | CodeName: %s | Code: %s'
             ):format(
+
+                tostring(
+                    relaySource
+                ),
 
                 tostring(
                     dispatchData.codeName
@@ -241,10 +369,6 @@ function Provider.Send(
 
                 tostring(
                     dispatchData.code
-                ),
-
-                tostring(
-                    dispatchData.message
                 )
             )
         )
@@ -256,10 +380,47 @@ function Provider.Send(
             provider =
                 'ps',
 
+            relaySource =
+                relaySource,
+
             codeName =
                 dispatchData.codeName
         }
 end
+
+
+---------------------------------------------------------
+-- CLIENT RELAY DEBUG ACK
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:server:psDispatchRelayComplete',
+
+    function(
+        codeName
+    )
+        if Config.Debug ~= true then
+
+            return
+        end
+
+
+        print(
+            (
+                '^2[LB-VAMPIRE]^7 PS dispatch relay completed | Source: %s | CodeName: %s'
+            ):format(
+
+                tostring(
+                    source
+                ),
+
+                tostring(
+                    codeName
+                )
+            )
+        )
+    end
+)
 
 
 ---------------------------------------------------------

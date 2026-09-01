@@ -1829,177 +1829,179 @@ end
 -- USABLE ITEM
 ---------------------------------------------------------
 
+BloodBags.UseSessions = BloodBags.UseSessions or {}
+
+local function GetBloodBagUseConfig()
+    local config = GetConfig()
+    return config.Use or {}
+end
+
+local function BloodBagUseMessage(reason)
+    local messages = {
+        metadata_missing = 'Bu kan torbasında geçerli kan verisi bulunmuyor.',
+        invalid_blood_type = 'Kan torbasının kan grubu geçersiz.',
+        empty_bag = 'Kan torbası boş.',
+        expiry_missing = 'Kan torbasının son kullanma bilgisi bulunmuyor.',
+        blood_bag_expired = 'Kan torbasının son kullanma tarihi geçmiş.',
+        human_blood_full = 'Kan rezervin zaten normal seviyede.',
+        vampire_blood_full = 'Kan rezervin zaten dolu.',
+        target_blood_type_unknown = 'Kan grubun belirlenemedi.',
+        blood_type_incompatible = 'Bu kan torbasının kan grubu seninle uyumlu değil.',
+        item_not_found = 'Kan torbası artık üzerinde bulunmuyor.',
+        invalid_use_session = 'Kan torbası kullanım oturumu geçersiz.',
+        use_too_early = 'Kan torbası kullanımı tamamlanmadı.'
+    }
+
+    return messages[reason] or ('Kan torbası kullanılamadı: ' .. tostring(reason))
+end
+
+local function NotifyBloodBagResult(source, result)
+    if result.targetType == 'VAMPIRE' then
+        Notify(
+            source,
+            ('%s kan torbasından %.1f Blood kazandın.'):format(
+                result.bloodType,
+                tonumber(result.gained) or 0
+            ),
+            'success',
+            5000
+        )
+    else
+        Notify(
+            source,
+            ('%s kan torbası uygulandı. Kan rezervin %.1f arttı.'):format(
+                result.bloodType,
+                tonumber(result.gained) or 0
+            ),
+            'success',
+            5000
+        )
+    end
+end
+
+local function ValidateBloodBagUse(source, slot)
+    local item, itemReason = GetBagItem(source, slot)
+    if not item then return false, itemReason end
+
+    local bag, bagReason = ParseBag(item)
+    if not bag then return false, bagReason end
+    if bag.expiresAt <= os.time() then return false, 'blood_bag_expired' end
+
+    return true, item, bag
+end
+
+local function ClearBloodBagUseSession(source, token)
+    source = tonumber(source)
+    if not source then return false end
+
+    local session = BloodBags.UseSessions[source]
+    if not session then return false end
+    if token and tostring(session.token) ~= tostring(token) then return false end
+
+    BloodBags.UseSessions[source] = nil
+    return true
+end
+
 CreateThread(function()
+    Wait(500)
 
-    Wait(
-        500
-    )
+    local config = GetConfig()
+    if config.Enabled ~= true then return end
 
+    local itemName = tostring(config.Name or 'lb_bloodbag')
 
-    local config =
-        GetConfig()
+    QBCore.Functions.CreateUseableItem(itemName, function(source, item)
+        source = tonumber(source)
+        if not source or not item or not item.slot then
+            if source then Notify(source, 'Kan torbası verisi okunamadı.', 'error') end
+            return
+        end
 
+        if BloodBags.UseSessions[source] then
+            Notify(source, 'Zaten bir kan torbası kullanıyorsun.', 'error', 3500)
+            return
+        end
 
-    if config.Enabled ~= true then
+        local valid, reason = ValidateBloodBagUse(source, item.slot)
+        if not valid then
+            Notify(source, BloodBagUseMessage(reason), 'error', 6000)
+            return
+        end
+
+        local useConfig = GetBloodBagUseConfig()
+        local duration = math.max(math.floor(tonumber(useConfig.Duration) or 6000), 500)
+        local token = ('%s:%s:%s:%s'):format(
+            tostring(source),
+            tostring(item.slot),
+            tostring(GetGameTimer()),
+            tostring(math.random(100000, 999999))
+        )
+
+        BloodBags.UseSessions[source] = {
+            token = token,
+            slot = tonumber(item.slot),
+            startedAt = GetGameTimer(),
+            duration = duration
+        }
+
+        TriggerClientEvent('lb-vampire:client:bloodbag:startUse', source, {
+            token = token,
+            duration = duration,
+            label = tostring(useConfig.Label or 'Kan torbası kullanılıyor...')
+        })
+    end)
+
+    if Config.Debug then
+        print(('^2[LB-VAMPIRE]^7 Blood bag usable registered: %s'):format(itemName))
+    end
+end)
+
+RegisterNetEvent('lb-vampire:server:bloodbag:cancelUse', function(token)
+    local src = tonumber(source)
+    if not src then return end
+    ClearBloodBagUseSession(src, token)
+end)
+
+RegisterNetEvent('lb-vampire:server:bloodbag:completeUse', function(token)
+    local src = tonumber(source)
+    if not src then return end
+
+    local session = BloodBags.UseSessions[src]
+    if not session or tostring(session.token) ~= tostring(token or '') then
+        Notify(src, BloodBagUseMessage('invalid_use_session'), 'error', 4000)
         return
     end
 
-
-    local itemName =
-        tostring(
-            config.Name
-            or 'lb_bloodbag'
-        )
-
-
-    QBCore.Functions.CreateUseableItem(
-        itemName,
-        function(
-            source,
-            item
-        )
-
-            if not item
-                or not item.slot then
-
-
-                Notify(
-                    source,
-                    'Kan torbası verisi okunamadı.',
-                    'error'
-                )
-
-
-                return
-            end
-
-
-            local success,
-                result =
-                BloodBags.Administer(
-
-                    source,
-
-                    source,
-
-                    item.slot
-                )
-
-
-            if not success then
-
-                local messages = {
-
-                    metadata_missing =
-                        'Bu kan torbasında geçerli kan verisi bulunmuyor.',
-
-                    invalid_blood_type =
-                        'Kan torbasının kan grubu geçersiz.',
-
-                    empty_bag =
-                        'Kan torbası boş.',
-
-                    expiry_missing =
-                        'Kan torbasının son kullanma bilgisi bulunmuyor.',
-
-                    blood_bag_expired =
-                        'Kan torbasının son kullanma tarihi geçmiş.',
-
-                    human_blood_full =
-                        'Kan rezervin zaten normal seviyede.',
-
-                    vampire_blood_full =
-                        'Kan rezervin zaten dolu.',
-
-                    target_blood_type_unknown =
-                        'Kan grubun belirlenemedi.',
-
-                    blood_type_incompatible =
-                        'Bu kan torbasının kan grubu seninle uyumlu değil.'
-                }
-
-
-                Notify(
-                    source,
-
-                    messages[result]
-                    or (
-                        'Kan torbası kullanılamadı: '
-                        .. tostring(result)
-                    ),
-
-                    'error',
-
-                    6000
-                )
-
-
-                return
-            end
-
-
-            if result.targetType ==
-                'VAMPIRE' then
-
-
-                Notify(
-                    source,
-
-                    (
-                        '%s kan torbasından %.1f Blood kazandın.'
-                    ):format(
-
-                        result.bloodType,
-
-                        tonumber(
-                            result.gained
-                        )
-                        or 0
-                    ),
-
-                    'success',
-
-                    5000
-                )
-
-
-            else
-
-                Notify(
-                    source,
-
-                    (
-                        '%s kan torbası uygulandı. Kan rezervin %.1f arttı.'
-                    ):format(
-
-                        result.bloodType,
-
-                        tonumber(
-                            result.gained
-                        )
-                        or 0
-                    ),
-
-                    'success',
-
-                    5000
-                )
-            end
-        end
-    )
-
-
-    if Config.Debug then
-
-        print(
-            (
-                '^2[LB-VAMPIRE]^7 Blood bag usable registered: %s'
-            ):format(
-                itemName
-            )
-        )
+    local useConfig = GetBloodBagUseConfig()
+    local tolerance = math.max(math.floor(tonumber(useConfig.CompletionTolerance) or 350), 0)
+    local elapsed = GetGameTimer() - (tonumber(session.startedAt) or GetGameTimer())
+    if elapsed + tolerance < (tonumber(session.duration) or 6000) then
+        ClearBloodBagUseSession(src, token)
+        TriggerClientEvent('lb-vampire:client:bloodbag:forceCancel', src)
+        Notify(src, BloodBagUseMessage('use_too_early'), 'error', 4000)
+        return
     end
+
+    local slot = tonumber(session.slot)
+    ClearBloodBagUseSession(src, token)
+
+    -- Final authoritative validation + inventory mutation happens only here,
+    -- after the progressbar has actually completed.
+    local success, result = BloodBags.Administer(src, src, slot)
+    if not success then
+        Notify(src, BloodBagUseMessage(result), 'error', 6000)
+        return
+    end
+
+    NotifyBloodBagResult(src, result)
 end)
+
+AddEventHandler('playerDropped', function()
+    local src = tonumber(source)
+    if src then BloodBags.UseSessions[src] = nil end
+end)
+
+
 
 
 ---------------------------------------------------------

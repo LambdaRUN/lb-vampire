@@ -553,6 +553,17 @@ function LBVampire.Vampires.LoadPlayer(
             or databaseState.can_embrace == true,
 
 
+        -------------------------------------------------
+        -- TORPOR / 5D
+        -------------------------------------------------
+
+        torporStage = tonumber(databaseState.torpor_stage) or 0,
+
+        collapseStartedAt = tonumber(databaseState.collapse_started_at),
+
+        kinCalls = tonumber(databaseState.kin_calls) or 0,
+
+
         embracedAt =
             databaseState.embraced_at,
 

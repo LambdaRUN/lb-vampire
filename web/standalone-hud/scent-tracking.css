@@ -1,0 +1,315 @@
+/* =========================================================
+   BEAST CALL - SCENT TRACKING
+========================================================= */
+
+.scent-tracking {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+
+    pointer-events: none;
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity 320ms ease,
+        visibility 320ms ease;
+}
+
+.scent-tracking.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.scent-filter {
+    position: absolute;
+    inset: 0;
+
+    opacity: 0.42;
+
+    background:
+        radial-gradient(
+            circle at 50% 48%,
+            rgba(32, 88, 53, 0.3) 0%,
+            rgba(32, 88, 53, 0.453) 36%,
+            rgba(35, 100, 59, 0.67) 68%,
+            rgba(26, 74, 46, 0.86) 100%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(50, 118, 67, 0.035),
+            rgba(21, 58, 38, 0.055)
+        );
+
+    box-shadow:
+        inset 0 0 165px rgba(35, 110, 60, 0.17),
+        inset 0 0 360px rgba(13, 52, 31, 0.14);
+
+    transition:
+        opacity 450ms ease,
+        filter 450ms ease;
+}
+
+.scent-tracking[data-strength="DETECTED"] .scent-filter {
+    opacity: 0.52;
+}
+
+.scent-tracking[data-strength="STRONG"] .scent-filter {
+    opacity: 0.64;
+
+    filter:
+        saturate(1.08);
+}
+
+.scent-tracking[data-strength="NEARBY"] .scent-filter {
+    opacity: 0.76;
+
+    filter:
+        saturate(1.16)
+        contrast(1.03);
+}
+
+.scent-pulse {
+    position: absolute;
+    left: 50%;
+    bottom: 15.5vh;
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    min-width: 230px;
+
+    padding:
+        10px 16px 10px 12px;
+
+    border:
+        1px solid
+        rgba(130, 205, 145, 0.12);
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(8, 16, 12, 0.86),
+            rgba(12, 23, 17, 0.76)
+        );
+
+    box-shadow:
+        0 12px 42px rgba(0, 0, 0, 0.32),
+        0 0 24px rgba(69, 166, 90, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    opacity: 0;
+
+    transform:
+        translate(-50%, 12px)
+        scale(0.97);
+
+    transition:
+        opacity 170ms ease,
+        transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 240ms ease,
+        box-shadow 240ms ease;
+}
+
+.scent-pulse::after {
+    content: "";
+
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+
+    height: 1px;
+
+    opacity: 0.55;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(87, 204, 111, 0.72),
+            transparent
+        );
+}
+
+.scent-pulse.pulse-visible {
+    opacity: 1;
+
+    transform:
+        translate(-50%, 0)
+        scale(1);
+}
+
+.scent-tracking[data-strength="STRONG"] .scent-pulse,
+.scent-tracking[data-strength="NEARBY"] .scent-pulse {
+    border-color:
+        rgba(121, 216, 142, 0.20);
+
+    box-shadow:
+        0 12px 42px rgba(0, 0, 0, 0.34),
+        0 0 28px rgba(77, 187, 100, 0.11),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.scent-orb {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scent-orb-core {
+    position: relative;
+    z-index: 2;
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(126, 219, 145, 0.92);
+
+    box-shadow:
+        0 0 8px rgba(98, 219, 122, 0.75),
+        0 0 18px rgba(66, 170, 87, 0.38);
+}
+
+.scent-orb-ring {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 12px;
+    height: 12px;
+
+    border:
+        1px solid
+        rgba(112, 208, 133, 0.48);
+
+    border-radius: 50%;
+
+    opacity: 0;
+
+    transform:
+        translate(-50%, -50%)
+        scale(0.7);
+}
+
+.scent-pulse.pulse-visible .ring-one {
+    animation:
+        scentRing 1.25s ease-out 1;
+}
+
+.scent-pulse.pulse-visible .ring-two {
+    animation:
+        scentRing 1.25s 0.16s ease-out 1;
+}
+
+@keyframes scentRing {
+    0% {
+        opacity: 0.68;
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.72);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -50%)
+            scale(2.85);
+    }
+}
+
+.scent-copy {
+    min-width: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+.scent-eyebrow {
+    margin-bottom: 2px;
+
+    color:
+        rgba(112, 188, 128, 0.66);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.18em;
+}
+
+.scent-strength {
+    color:
+        rgba(237, 244, 238, 0.94);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.025em;
+
+    line-height: 1.15;
+}
+
+.scent-direction-row {
+    margin-top: 4px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.scent-direction-mark {
+    width: 16px;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(91, 190, 111, 0.28),
+            rgba(113, 210, 132, 0.82)
+        );
+
+    box-shadow:
+        0 0 5px rgba(84, 191, 105, 0.24);
+}
+
+.scent-direction {
+    color:
+        rgba(156, 205, 165, 0.78);
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 0.12em;
+}
+
+.scent-tracking[data-strength="FAINT"] .scent-orb-core {
+    opacity: 0.58;
+}
+
+.scent-tracking[data-strength="DETECTED"] .scent-orb-core {
+    opacity: 0.74;
+}
+
+.scent-tracking[data-strength="STRONG"] .scent-orb-core,
+.scent-tracking[data-strength="NEARBY"] .scent-orb-core {
+    opacity: 1;
+}

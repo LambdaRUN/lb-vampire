@@ -18,6 +18,9 @@ Status.active =
 Status.debugMode =
     false
 
+Status.mode =
+    nil
+
 Status.partnerName =
     nil
 
@@ -37,6 +40,15 @@ Status.pendingReal =
     false
 
 Status.pendingPartnerName =
+    nil
+
+Status.pendingNPC =
+    false
+
+Status.pendingBeast =
+    false
+
+Status.pendingBeastName =
     nil
 
 ---------------------------------------------------------
@@ -132,6 +144,10 @@ local function CloseStatus(
         false
 
 
+    Status.mode =
+        nil
+
+
     Status.partnerName =
         nil
 
@@ -149,6 +165,15 @@ local function CloseStatus(
 
     Status.pendingPartnerName =
     nil
+
+    Status.pendingNPC =
+    false
+
+    Status.pendingBeast =
+        false
+
+    Status.pendingBeastName =
+        nil
 
     SendNUIMessage({
         action =
@@ -409,6 +434,48 @@ RegisterNUICallback(
         end
 
 
+        if Status.pendingBeast == true then
+
+            Status.mode =
+                'BEAST'
+
+            local opened =
+                OpenStatus(
+                    Status.pendingBeastName
+                        or 'Hayvan',
+                    false
+                )
+
+            if opened then
+                Status.pendingBeast =
+                    false
+
+                Status.pendingBeastName =
+                    nil
+            end
+        end
+
+
+        if Status.pendingNPC == true then
+
+            Status.mode =
+                'NPC'
+
+
+            local opened =
+                OpenStatus(
+                    'Sivil',
+                    false
+                )
+
+
+            if opened then
+                Status.pendingNPC =
+                    false
+            end
+        end
+
+
         cb({
             success =
                 true
@@ -441,6 +508,21 @@ RegisterNetEvent(
         if role ~= 'VAMPIRE' then
             return
         end
+
+
+        Status.mode =
+            'PLAYER'
+
+
+        Status.pendingNPC =
+            false
+
+
+        Status.pendingBeast =
+            false
+
+        Status.pendingBeastName =
+            nil
 
 
         -------------------------------------------------
@@ -483,7 +565,10 @@ RegisterNetEvent(
     'lb-vampire:client:feedingStatusUpdate',
     function(data)
 
-        if Status.debugMode == true then
+        if Status.debugMode == true
+            or Status.mode == 'NPC'
+            or Status.mode == 'BEAST' then
+
             return
         end
 
@@ -546,6 +631,280 @@ RegisterNetEvent(
 
 
 ---------------------------------------------------------
+-- BEAST FEEDING START
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:beastFeedingStarted',
+    function(data)
+
+        data =
+            data or {}
+
+
+        if Status.debugMode == true then
+            return
+        end
+
+
+        if Status.active == true then
+            CloseStatus(
+                'beast_feeding_start'
+            )
+        end
+
+
+        Status.mode =
+            'BEAST'
+
+
+        Status.pendingReal =
+            false
+
+
+        Status.pendingNPC =
+            false
+
+
+        Status.pendingPartnerName =
+            nil
+
+
+        local animalName =
+            tostring(
+                data.label
+                or 'Hayvan'
+            )
+
+
+        local opened =
+            OpenStatus(
+                animalName,
+                false
+            )
+
+
+        if not opened then
+            Status.pendingBeast =
+                true
+
+            Status.pendingBeastName =
+                animalName
+
+            Status.mode =
+                'BEAST'
+        end
+    end
+)
+
+
+---------------------------------------------------------
+-- BEAST STATUS UPDATE
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:beastFeedingStatusUpdate',
+    function(data)
+
+        if Status.debugMode == true then
+            return
+        end
+
+
+        if Status.mode ~= 'BEAST' then
+            Status.mode =
+                'BEAST'
+        end
+
+
+        if Status.active ~= true then
+
+            local animalName =
+                Status.pendingBeastName
+                or 'Hayvan'
+
+
+            local opened =
+                OpenStatus(
+                    animalName,
+                    false
+                )
+
+
+            if not opened then
+                Status.pendingBeast =
+                    true
+
+                return
+            end
+
+
+            Status.pendingBeast =
+                false
+
+            Status.pendingBeastName =
+                nil
+        end
+
+
+        UpdateStatus(
+            data
+        )
+    end
+)
+
+
+---------------------------------------------------------
+-- BEAST FEEDING STOP
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:beastFeedingStopped',
+    function(data)
+
+        data =
+            data or {}
+
+
+        if Status.mode == 'BEAST'
+            or Status.pendingBeast == true then
+
+            CloseStatus(
+                data.reason
+                or 'beast_feeding_stopped'
+            )
+        end
+    end
+)
+
+
+---------------------------------------------------------
+-- NPC FEEDING START
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:npcFeedingStarted',
+    function()
+
+        if Status.debugMode == true then
+            return
+        end
+
+
+        if Status.active == true then
+
+            CloseStatus(
+                'npc_feeding_start'
+            )
+        end
+
+
+        Status.mode =
+            'NPC'
+
+
+        Status.pendingReal =
+            false
+
+
+        Status.pendingPartnerName =
+            nil
+
+
+        local opened =
+            OpenStatus(
+                'Sivil',
+                false
+            )
+
+
+        if not opened then
+
+            Status.pendingNPC =
+                true
+
+            Status.mode =
+                'NPC'
+        end
+    end
+)
+
+
+---------------------------------------------------------
+-- NPC STATUS UPDATE
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:npcFeedingStatusUpdate',
+    function(data)
+
+        if Status.debugMode == true then
+            return
+        end
+
+
+        if Status.mode ~= 'NPC' then
+
+            Status.mode =
+                'NPC'
+        end
+
+
+        if Status.active ~= true then
+
+            local opened =
+                OpenStatus(
+                    'Sivil',
+                    false
+                )
+
+
+            if not opened then
+
+                Status.pendingNPC =
+                    true
+
+                return
+            end
+
+
+            Status.pendingNPC =
+                false
+        end
+
+
+        UpdateStatus(
+            data
+        )
+    end
+)
+
+
+---------------------------------------------------------
+-- NPC FEEDING STOP
+---------------------------------------------------------
+
+RegisterNetEvent(
+    'lb-vampire:client:npcFeedingStopped',
+    function(data)
+
+        data =
+            data or {}
+
+
+        if Status.mode == 'NPC'
+            or Status.pendingNPC == true then
+
+            CloseStatus(
+                data.reason
+                or 'npc_feeding_stopped'
+            )
+        end
+    end
+)
+
+
+---------------------------------------------------------
 -- FEEDING STOP
 ---------------------------------------------------------
 
@@ -553,7 +912,9 @@ RegisterNetEvent(
     'lb-vampire:client:feedingStopped',
     function(reason)
 
-        if Status.active then
+        if Status.active
+            and Status.mode ~= 'NPC'
+            and Status.mode ~= 'BEAST' then
 
             CloseStatus(
                 reason
@@ -596,8 +957,43 @@ RegisterNetEvent(
 ---------------------------------------------------------
 
 local function StopFeeding()
-    if Status.active ~=
-        true then
+    local npcActive =
+        LBVampire.NPCFeedingClient
+        and LBVampire.NPCFeedingClient.active == true
+
+
+    local beastActive =
+        LBVampire.BeastCallClient
+        and LBVampire.BeastCallClient.active == true
+        and LBVampire.BeastCallClient.feeding == true
+
+
+    if Status.active ~= true
+        and npcActive ~= true
+        and beastActive ~= true then
+
+        return
+    end
+
+
+    if npcActive == true then
+
+        TriggerServerEvent(
+            'lb-vampire:server:cancelNPCFeeding',
+            'manual_cancel'
+        )
+
+        return
+    end
+
+
+    if beastActive == true
+        or Status.mode == 'BEAST' then
+
+        TriggerServerEvent(
+            'lb-vampire:server:cancelBeastFeeding',
+            'manual_cancel'
+        )
 
         return
     end
@@ -629,7 +1025,22 @@ local function StopFeeding()
 
 
     -----------------------------------------------------
-    -- REAL SESSION
+    -- NPC SESSION
+    -----------------------------------------------------
+
+    if Status.mode == 'NPC' then
+
+        TriggerServerEvent(
+            'lb-vampire:server:cancelNPCFeeding',
+            'manual_cancel'
+        )
+
+        return
+    end
+
+
+    -----------------------------------------------------
+    -- PLAYER SESSION
     -----------------------------------------------------
 
     TriggerServerEvent(

@@ -49,13 +49,18 @@ local function Distance(
 
 
     local x =
-        first.x - second.x
+        first.x
+        - second.x
+
 
     local y =
-        first.y - second.y
+        first.y
+        - second.y
+
 
     local z =
-        first.z - second.z
+        first.z
+        - second.z
 
 
     return math.sqrt(
@@ -74,17 +79,23 @@ local function Clamp(
     maximum
 )
     value =
-        tonumber(value)
+        tonumber(
+            value
+        )
         or minimum
 
 
-    if value < minimum then
+    if value <
+        minimum then
+
 
         return minimum
     end
 
 
-    if value > maximum then
+    if value >
+        maximum then
+
 
         return maximum
     end
@@ -99,16 +110,22 @@ local function RandomBetween(
     maximum
 )
     minimum =
-        tonumber(minimum)
+        tonumber(
+            minimum
+        )
         or 0
 
 
     maximum =
-        tonumber(maximum)
+        tonumber(
+            maximum
+        )
         or minimum
 
 
-    if maximum < minimum then
+    if maximum <
+        minimum then
+
 
         minimum,
         maximum =
@@ -118,17 +135,19 @@ local function RandomBetween(
 
 
     return math.random(
-        math.floor(minimum),
-        math.floor(maximum)
+        math.floor(
+            minimum
+        ),
+
+        math.floor(
+            maximum
+        )
     )
 end
 
 
 ---------------------------------------------------------
 -- PLAYER PED LOOKUP
---
--- Ambient NPC taramasında gerçek oyuncuları witness
--- olarak saymamak için.
 ---------------------------------------------------------
 
 local function BuildPlayerPedLookup()
@@ -178,79 +197,172 @@ end
 
 
 ---------------------------------------------------------
--- WORLD HOUR
+-- HUMAN PED CHECK
 ---------------------------------------------------------
 
-local function GetWorldHour()
+local function IsHumanPed(
+    ped
+)
+    local config =
+        GetWitnessConfig()
+
+
+    if config.HumanOnly ==
+        false then
+
+
+        return true
+    end
+
 
     -----------------------------------------------------
-    -- Önce LB-VAMPIRE weather bridge getter'larını
-    -- deniyoruz.
+    -- Native server build'de mevcutsa kullan.
     -----------------------------------------------------
 
-    if LBVampire.Weather then
-
-        local getters = {
-            'GetHour',
-            'GetCurrentHour',
-            'GetGameHour'
-        }
+    if type(
+        IsPedHuman
+    ) == 'function' then
 
 
-        for i = 1,
-            #getters do
+        local success,
+            result =
+            pcall(
+                IsPedHuman,
+                ped
+            )
 
 
-            local getter =
-                LBVampire.Weather[
-                    getters[i]
-                ]
+        if success then
 
-
-            if type(getter)
-                == 'function' then
-
-
-                local success,
-                    hour =
-                    pcall(
-                        getter
-                    )
-
-
-                hour =
-                    tonumber(
-                        hour
-                    )
-
-
-                if success
-                    and hour
-                    and hour >= 0
-                    and hour <= 23 then
-
-
-                    return math.floor(
-                        hour
-                    )
-                end
-            end
+            return result ==
+                true
         end
     end
 
 
     -----------------------------------------------------
-    -- Native mevcutsa fallback.
+    -- Fallback:
+    -- GTA ped type 28 = animal.
     -----------------------------------------------------
 
-    if type(GetClockHours)
-        == 'function' then
+    if type(
+        GetPedType
+    ) == 'function' then
+
+
+        local success,
+            pedType =
+            pcall(
+                GetPedType,
+                ped
+            )
+
+
+        if success
+            and tonumber(
+                pedType
+            ) == 28 then
+
+
+            return false
+        end
+    end
+
+
+    -----------------------------------------------------
+    -- Native yoksa yanlışlıkla sistemi tamamen
+    -- bozmak yerine ped'i kabul ediyoruz.
+    -----------------------------------------------------
+
+    return true
+end
+
+
+---------------------------------------------------------
+-- VALID AMBIENT PED
+---------------------------------------------------------
+
+local function IsValidAmbientPed(
+    ped,
+    victim,
+    playerPeds
+)
+    if not ped
+        or ped == 0
+        or ped == victim then
+
+
+        return false
+    end
+
+
+    if not DoesEntityExist(
+        ped
+    ) then
+
+
+        return false
+    end
+
+
+    if GetEntityType(
+        ped
+    ) ~= 1 then
+
+
+        return false
+    end
+
+
+    -----------------------------------------------------
+    -- Gerçek player witness havuzuna girmez.
+    -----------------------------------------------------
+
+    if playerPeds[
+        ped
+    ] == true then
+
+
+        return false
+    end
+
+
+    if GetEntityHealth(
+        ped
+    ) <= 0 then
+
+
+        return false
+    end
+
+
+    if not IsHumanPed(
+        ped
+    ) then
+
+
+        return false
+    end
+
+
+    return true
+end
+
+
+---------------------------------------------------------
+-- WORLD HOUR
+---------------------------------------------------------
+
+local function GetWorldHour()
+
+    if LBVampire.Weather
+        and LBVampire.Weather.GetHour then
 
 
         local success,
             hour =
             pcall(
-                GetClockHours
+                LBVampire.Weather.GetHour
             )
 
 
@@ -273,10 +385,6 @@ local function GetWorldHour()
     end
 
 
-    -----------------------------------------------------
-    -- Saat bulunamazsa night modifier uygulanmaz.
-    -----------------------------------------------------
-
     return nil
 end
 
@@ -288,7 +396,9 @@ end
 local function IsNight(
     hour
 )
-    if hour == nil then
+    if hour ==
+        nil then
+
 
         return false
     end
@@ -299,7 +409,9 @@ local function IsNight(
         or {}
 
 
-    if config.Enabled ~= true then
+    if config.Enabled ~=
+        true then
+
 
         return false
     end
@@ -320,110 +432,29 @@ local function IsNight(
 
 
     -----------------------------------------------------
-    -- Örnek:
-    --
-    -- Start = 22
-    -- End   = 05
-    --
-    -- 22:00 -> 04:59 night.
+    -- Örn 22 -> 05
     -----------------------------------------------------
 
     if startHour >
         endHour then
 
 
-        return hour >= startHour
-            or hour < endHour
+        return hour >=
+            startHour
+            or hour <
+                endHour
     end
 
 
-    -----------------------------------------------------
-    -- Örn:
-    --
-    -- 18 -> 23
-    -----------------------------------------------------
-
-    return hour >= startHour
-        and hour < endHour
-end
-
-
----------------------------------------------------------
--- VALID AMBIENT PED
----------------------------------------------------------
-
-local function IsValidAmbientPed(
-    ped,
-    victimEntity,
-    playerPeds
-)
-    if not ped
-        or ped == 0
-        or ped == victimEntity then
-
-
-        return false
-    end
-
-
-    if not DoesEntityExist(
-        ped
-    ) then
-
-
-        return false
-    end
-
-
-    -----------------------------------------------------
-    -- Player ped değil.
-    -----------------------------------------------------
-
-    if playerPeds[
-        ped
-    ] == true then
-
-
-        return false
-    end
-
-
-    -----------------------------------------------------
-    -- Ped entity olmalı.
-    -----------------------------------------------------
-
-    if GetEntityType(
-        ped
-    ) ~= 1 then
-
-
-        return false
-    end
-
-
-    -----------------------------------------------------
-    -- Ölü witness sayma.
-    -----------------------------------------------------
-
-    if GetEntityHealth(
-        ped
-    ) <= 0 then
-
-
-        return false
-    end
-
-
-    return true
+    return hour >=
+        startHour
+        and hour <
+            endHour
 end
 
 
 ---------------------------------------------------------
 -- WORLD SCAN
---
--- Witness
--- Nearby pedestrian density
--- Nearby vehicle density
 ---------------------------------------------------------
 
 local function ScanWorld(
@@ -441,10 +472,6 @@ local function ScanWorld(
     local playerPeds =
         BuildPlayerPedLookup()
 
-
-    -----------------------------------------------------
-    -- RADII
-    -----------------------------------------------------
 
     local witnessRadius =
         tonumber(
@@ -477,14 +504,6 @@ local function ScanWorld(
         or 45.0
 
 
-    local scanRadius =
-        math.max(
-            witnessRadius,
-            busyRadius,
-            secludedRadius
-        )
-
-
     -----------------------------------------------------
     -- RESULTS
     -----------------------------------------------------
@@ -493,16 +512,20 @@ local function ScanWorld(
         {}
 
 
-    local nearbyPeds =
+    local busyPeds =
         0
 
 
-    local nearbyVehicles =
+    local secludedPeds =
+        0
+
+
+    local secludedVehicles =
         0
 
 
     -----------------------------------------------------
-    -- PED SCAN
+    -- PEDS
     -----------------------------------------------------
 
     local success,
@@ -546,15 +569,28 @@ local function ScanWorld(
 
 
                 -------------------------------------------------
-                -- GENERAL PEDESTRIAN DENSITY
+                -- BUSY AREA COUNT
                 -------------------------------------------------
 
                 if distance <=
-                    scanRadius then
+                    busyRadius then
 
 
-                    nearbyPeds =
-                        nearbyPeds + 1
+                    busyPeds =
+                        busyPeds + 1
+                end
+
+
+                -------------------------------------------------
+                -- SECLUDED COUNT
+                -------------------------------------------------
+
+                if distance <=
+                    secludedRadius then
+
+
+                    secludedPeds =
+                        secludedPeds + 1
                 end
 
 
@@ -562,8 +598,10 @@ local function ScanWorld(
                 -- WITNESS
                 -------------------------------------------------
 
-                if witnessConfig.Enabled == true
-                    and distance <= witnessRadius then
+                if witnessConfig.Enabled ==
+                    true
+                    and distance <=
+                        witnessRadius then
 
 
                     local netId =
@@ -579,7 +617,6 @@ local function ScanWorld(
                         witnesses[
                             #witnesses + 1
                         ] = {
-
                             entity =
                                 ped,
 
@@ -597,7 +634,7 @@ local function ScanWorld(
 
 
     -----------------------------------------------------
-    -- CLOSEST WITNESS FIRST
+    -- CLOSEST FIRST
     -----------------------------------------------------
 
     table.sort(
@@ -608,26 +645,23 @@ local function ScanWorld(
             second
         )
 
-            return first.distance
-                < second.distance
+            return first.distance <
+                second.distance
         end
     )
 
 
     -----------------------------------------------------
-    -- WITNESS LIMIT
+    -- MAX WITNESSES
     -----------------------------------------------------
 
     local maximumWitnesses =
-        tonumber(
-            witnessConfig.MaximumWitnesses
-        )
-        or 8
-
-
-    maximumWitnesses =
         math.max(
-            maximumWitnesses,
+            tonumber(
+                witnessConfig.MaximumWitnesses
+            )
+            or 8,
+
             0
         )
 
@@ -643,7 +677,7 @@ local function ScanWorld(
 
 
     -----------------------------------------------------
-    -- VEHICLE SCAN
+    -- VEHICLES
     -----------------------------------------------------
 
     local vehicleSuccess,
@@ -685,8 +719,8 @@ local function ScanWorld(
                 ) <= secludedRadius then
 
 
-                    nearbyVehicles =
-                        nearbyVehicles + 1
+                    secludedVehicles =
+                        secludedVehicles + 1
                 end
             end
         end
@@ -694,15 +728,17 @@ local function ScanWorld(
 
 
     return {
-
         witnesses =
             witnesses,
 
-        nearbyPeds =
-            nearbyPeds,
+        busyPeds =
+            busyPeds,
 
-        nearbyVehicles =
-            nearbyVehicles
+        secludedPeds =
+            secludedPeds,
+
+        secludedVehicles =
+            secludedVehicles
     }
 end
 
@@ -712,21 +748,30 @@ end
 ---------------------------------------------------------
 
 local function CalculateDispatchChance(
-    scan
+    scan,
+    baseChanceOverride,
+    modifierOverrides
 )
     local config =
         GetDispatchConfig()
 
 
+    modifierOverrides =
+        modifierOverrides
+        or {}
+
+
     local chance =
         tonumber(
+            baseChanceOverride
+        )
+        or tonumber(
             config.BaseChance
         )
         or 35
 
 
     local breakdown = {
-
         base =
             chance,
 
@@ -756,35 +801,38 @@ local function CalculateDispatchChance(
         0 then
 
 
-        local firstWitnessBonus =
+        local firstBonus =
             tonumber(
+                modifierOverrides.WitnessBonus
+            )
+            or tonumber(
                 config.WitnessBonus
             )
             or 25
 
 
-        local additionalWitnessBonus =
+        local additionalBonus =
             tonumber(
+                modifierOverrides.AdditionalWitnessBonus
+            )
+            or tonumber(
                 config.AdditionalWitnessBonus
             )
             or 5
 
 
-        local maximumWitnessBonus =
+        local maximumBonus =
             tonumber(
+                modifierOverrides.MaxWitnessBonus
+            )
+            or tonumber(
                 config.MaxWitnessBonus
             )
             or 40
 
 
-        -------------------------------------------------
-        -- İlk witness ana bonusu alır.
-        --
-        -- Diğer witnesslar AdditionalWitnessBonus.
-        -------------------------------------------------
-
-        local witnessBonus =
-            firstWitnessBonus
+        local totalBonus =
+            firstBonus
             +
             (
                 math.max(
@@ -792,63 +840,67 @@ local function CalculateDispatchChance(
                     0
                 )
                 *
-                additionalWitnessBonus
+                additionalBonus
             )
 
 
-        witnessBonus =
+        totalBonus =
             math.min(
-                witnessBonus,
-                maximumWitnessBonus
+                totalBonus,
+                maximumBonus
             )
 
 
         chance =
-            chance
-            +
-            witnessBonus
+            chance + totalBonus
 
 
         breakdown.witness =
-            witnessBonus
+            totalBonus
     end
 
 
     -----------------------------------------------------
-    -- BUSY AREA
+    -- BUSY
     -----------------------------------------------------
 
-    local busyConfig =
+    local busy =
         config.BusyArea
         or {}
 
 
-    local minimumPeds =
-        tonumber(
-            busyConfig.MinimumPeds
-        )
-        or 4
+    if busy.Enabled ~=
+        false then
 
 
-    if scan.nearbyPeds >=
-        minimumPeds then
-
-
-        local bonus =
+        local minimumPeds =
             tonumber(
-                busyConfig.Bonus
+                busy.MinimumPeds
             )
-            or 15
+            or 4
 
 
-        chance =
-            chance
-            +
-            bonus
+        if scan.busyPeds >=
+            minimumPeds then
 
 
-        breakdown.busy =
-            bonus
+            local bonus =
+                tonumber(
+                    modifierOverrides.BusyBonus
+                )
+                or tonumber(
+                    busy.Bonus
+                )
+                or 15
+
+
+            chance =
+                chance + bonus
+
+
+            breakdown.busy =
+                bonus
+        end
     end
 
 
@@ -865,22 +917,23 @@ local function CalculateDispatchChance(
     ) then
 
 
-        local nightConfig =
+        local night =
             config.Night
             or {}
 
 
         local modifier =
             tonumber(
-                nightConfig.Modifier
+                modifierOverrides.NightModifier
+            )
+            or tonumber(
+                night.Modifier
             )
             or -15
 
 
         chance =
-            chance
-            +
-            modifier
+            chance + modifier
 
 
         breakdown.night =
@@ -892,46 +945,47 @@ local function CalculateDispatchChance(
     -- SECLUDED
     -----------------------------------------------------
 
-    local secludedConfig =
+    local secluded =
         config.Secluded
         or {}
 
 
-    if secludedConfig.Enabled ==
+    if secluded.Enabled ==
         true then
 
 
         local maximumPeds =
             tonumber(
-                secludedConfig.MaximumPeds
+                secluded.MaximumPeds
             )
             or 1
 
 
         local maximumVehicles =
             tonumber(
-                secludedConfig.MaximumVehicles
+                secluded.MaximumVehicles
             )
             or 1
 
 
-        if scan.nearbyPeds <=
+        if scan.secludedPeds <=
             maximumPeds
-            and scan.nearbyVehicles <=
+            and scan.secludedVehicles <=
                 maximumVehicles then
 
 
             local modifier =
                 tonumber(
-                    secludedConfig.Modifier
+                    modifierOverrides.SecludedModifier
+                )
+                or tonumber(
+                    secluded.Modifier
                 )
                 or -20
 
 
             chance =
-                chance
-                +
-                modifier
+                chance + modifier
 
 
             breakdown.secluded =
@@ -941,28 +995,22 @@ local function CalculateDispatchChance(
 
 
     -----------------------------------------------------
-    -- FINAL CLAMP
+    -- CLAMP
     -----------------------------------------------------
-
-    local minimumChance =
-        tonumber(
-            config.MinChance
-        )
-        or 5
-
-
-    local maximumChance =
-        tonumber(
-            config.MaxChance
-        )
-        or 95
-
 
     chance =
         Clamp(
             chance,
-            minimumChance,
-            maximumChance
+
+            tonumber(
+                config.MinChance
+            )
+            or 5,
+
+            tonumber(
+                config.MaxChance
+            )
+            or 95
         )
 
 
@@ -975,61 +1023,233 @@ end
 
 
 ---------------------------------------------------------
--- SEND CLIENT REACTIONS
+-- ENTITY OWNER
 ---------------------------------------------------------
 
-local function SendReaction(
-    vampireSource,
-    victimNetId,
-    scan,
-    callerNetId
+local function GetReactionSource(
+    entity,
+    fallbackSource
 )
-    local witnessConfig =
-        GetWitnessConfig()
+    if entity
+        and entity ~= 0
+        and DoesEntityExist(
+            entity
+        )
+        and type(
+            NetworkGetEntityOwner
+        ) == 'function' then
 
 
-    local witnessNetIds =
-        {}
+        local success,
+            owner =
+            pcall(
+                NetworkGetEntityOwner,
+                entity
+            )
 
 
-    -----------------------------------------------------
-    -- Panic disabled ise witness list client'a
-    -- gönderilmez.
-    -----------------------------------------------------
-
-    if witnessConfig.Panic ==
-        true then
+        owner =
+            tonumber(
+                owner
+            )
 
 
-        for i = 1,
-            #scan.witnesses do
+        if success
+            and owner
+            and owner > 0
+            and GetPlayerName(
+                owner
+            ) then
 
 
-            witnessNetIds[
-                #witnessNetIds + 1
-            ] =
-                scan.witnesses[i]
-                    .netId
+            return owner
         end
     end
 
 
-    TriggerClientEvent(
-        'lb-vampire:client:npcDepletedReaction',
-
-        vampireSource,
-
-        {
-            victimNetId =
-                victimNetId,
-
-            witnesses =
-                witnessNetIds,
-
-            callerNetId =
-                callerNetId
-        }
+    return tonumber(
+        fallbackSource
     )
+end
+
+
+---------------------------------------------------------
+-- SEND REACTIONS
+---------------------------------------------------------
+
+local function SendReactions(
+    vampireSource,
+    victimEntity,
+    victimNetId,
+    scan,
+    callerNetId
+)
+    -----------------------------------------------------
+    -- VICTIM
+    -----------------------------------------------------
+
+    local victimSource =
+        GetReactionSource(
+            victimEntity,
+            vampireSource
+        )
+
+
+    if victimSource then
+
+
+        TriggerClientEvent(
+            'lb-vampire:client:npcVictimDepleted',
+
+            victimSource,
+
+            {
+                victimNetId =
+                    victimNetId
+            }
+        )
+    end
+
+
+    -----------------------------------------------------
+    -- WITNESSES
+    -----------------------------------------------------
+
+    local witnessConfig =
+        GetWitnessConfig()
+
+
+    local panicConfig =
+        witnessConfig.Panic
+        or {}
+
+
+    local callerConfig =
+        witnessConfig.Caller
+        or {}
+
+
+    for i = 1,
+        #scan.witnesses do
+
+
+        local witnessData =
+            scan.witnesses[i]
+
+
+        local mode =
+            'PANIC'
+
+
+        if callerNetId
+            and witnessData.netId ==
+                callerNetId then
+
+
+            mode =
+                'CALLER'
+        end
+
+
+        local shouldSend =
+            false
+
+
+        if mode ==
+            'CALLER' then
+
+
+            shouldSend =
+                callerConfig.Enabled
+                == true
+
+
+        elseif mode ==
+            'PANIC' then
+
+
+            shouldSend =
+                panicConfig.Enabled
+                == true
+        end
+
+
+        if shouldSend then
+
+
+            local reactionSource =
+                GetReactionSource(
+                    witnessData.entity,
+                    vampireSource
+                )
+
+
+            if reactionSource then
+
+
+                TriggerClientEvent(
+                    'lb-vampire:client:npcWitnessReaction',
+
+                    reactionSource,
+
+                    {
+                        victimNetId =
+                            victimNetId,
+
+                        witnessNetId =
+                            witnessData.netId,
+
+                        mode =
+                            mode
+                    }
+                )
+            end
+        end
+    end
+end
+
+
+---------------------------------------------------------
+-- CALLER VALID
+---------------------------------------------------------
+
+local function IsCallerStillValid(
+    callerNetId
+)
+    callerNetId =
+        tonumber(
+            callerNetId
+        )
+
+
+    if not callerNetId
+        or callerNetId <= 0 then
+
+
+        return false
+    end
+
+
+    local entity =
+        NetworkGetEntityFromNetworkId(
+            callerNetId
+        )
+
+
+    if not entity
+        or entity == 0
+        or not DoesEntityExist(
+            entity
+        ) then
+
+
+        return false
+    end
+
+
+    return GetEntityHealth(
+        entity
+    ) > 0
 end
 
 
@@ -1038,7 +1258,9 @@ end
 ---------------------------------------------------------
 
 local function SendDispatch(
-    victimCoords
+    vampireSource,
+    victimCoords,
+    kind
 )
     if not LBVampire.Dispatch
         or not LBVampire.Dispatch.Send then
@@ -1056,47 +1278,422 @@ local function SendDispatch(
     end
 
 
-    -----------------------------------------------------
-    -- Manager otomatik:
-    --
-    -- PS available -> PS
-    -- otherwise QB
-    -----------------------------------------------------
+    return LBVampire.Dispatch.Send({
+        source =
+            vampireSource,
 
-    local success,
-        result =
-        LBVampire.Dispatch.Send({
+        kind =
+            tostring(
+                kind
+                or 'npc_death'
+            ),
 
-            kind =
-                'npc_death',
+        coords = {
+            x =
+                victimCoords.x,
 
-            title =
-                'Şüpheli Saldırı',
+            y =
+                victimCoords.y,
 
-            description =
-                'Olası saldırı sonucu yerde hareketsiz bir şahıs bildirildi.',
-
-            coords = {
-
-                x =
-                    victimCoords.x,
-
-                y =
-                    victimCoords.y,
-
-                z =
-                    victimCoords.z
-            }
-        })
-
-
-    return success,
-        result
+            z =
+                victimCoords.z
+        }
+    })
 end
 
 
 ---------------------------------------------------------
--- HANDLE NPC BLOOD DEPLETION
+-- PARTIAL INCIDENT CONFIG
+---------------------------------------------------------
+
+local function GetPartialIncidentConfig()
+
+    return GetDispatchConfig()
+        .PartialIncident
+        or {}
+end
+
+
+---------------------------------------------------------
+-- PARTIAL INCIDENT SEVERITY
+---------------------------------------------------------
+
+local function GetPartialSeverity(
+    data
+)
+    data =
+        data or {}
+
+
+    local config =
+        GetPartialIncidentConfig()
+
+
+    local sessionLoss =
+        math.max(
+            tonumber(
+                data.sessionLoss
+            )
+            or 0.0,
+
+            0.0
+        )
+
+
+    local recentLoss =
+        math.max(
+            tonumber(
+                data.recentLoss
+            )
+            or sessionLoss,
+
+            sessionLoss
+        )
+
+
+    local remainingBlood =
+        math.max(
+            tonumber(
+                data.remainingBlood
+            )
+            or 0.0,
+
+            0.0
+        )
+
+
+    local minimumLoss =
+        math.max(
+            tonumber(
+                config.MinimumBloodLoss
+            )
+            or 7.0,
+
+            0.0
+        )
+
+
+    -----------------------------------------------------
+    -- Çok kısa / kazara temas: dispatch yok.
+    -- Ancak tekrar spam yapılırsa recentLoss büyür ve
+    -- sonraki bırakmada olay değerlendirmeye girer.
+    -----------------------------------------------------
+
+    if recentLoss <
+        minimumLoss then
+
+
+        return nil,
+            0,
+            recentLoss
+    end
+
+
+    local severity =
+        config.Severity
+        or {}
+
+
+    local light =
+        severity.Light
+        or {}
+
+
+    local medium =
+        severity.Medium
+        or {}
+
+
+    local heavy =
+        severity.Heavy
+        or {}
+
+
+    local status =
+        GetNPCConfig().StatusUI
+        or {}
+
+
+    local thresholds =
+        status.Thresholds
+        or {}
+
+
+    local lowThreshold =
+        tonumber(
+            thresholds.Low
+        )
+        or 70
+
+
+    local criticalThreshold =
+        tonumber(
+            thresholds.Critical
+        )
+        or 40
+
+
+    local heavyLoss =
+        tonumber(
+            heavy.MinLoss
+        )
+        or 55
+
+
+    local mediumLoss =
+        tonumber(
+            medium.MinLoss
+        )
+        or 25
+
+
+    -----------------------------------------------------
+    -- Kan kaybı veya kurbanın mevcut durumu hangisi daha
+    -- ağırsa onu baz alıyoruz.
+    -----------------------------------------------------
+
+    if recentLoss >= heavyLoss
+        or remainingBlood <= criticalThreshold then
+
+
+        return 'HEAVY',
+            tonumber(
+                heavy.BaseChance
+            )
+            or 35,
+            recentLoss
+    end
+
+
+    if recentLoss >= mediumLoss
+        or remainingBlood <= lowThreshold then
+
+
+        return 'MEDIUM',
+            tonumber(
+                medium.BaseChance
+            )
+            or 20,
+            recentLoss
+    end
+
+
+    return 'LIGHT',
+        tonumber(
+            light.BaseChance
+        )
+        or 10,
+        recentLoss
+end
+
+
+---------------------------------------------------------
+-- VICTIM CALLER CHANCE
+---------------------------------------------------------
+
+local function RollVictimCaller(
+    remainingBlood
+)
+    local config =
+        GetPartialIncidentConfig()
+            .VictimCaller
+        or {}
+
+
+    if config.Enabled ~=
+        true then
+
+
+        return false,
+            nil,
+            0
+    end
+
+
+    remainingBlood =
+        tonumber(
+            remainingBlood
+        )
+        or 0
+
+
+    local healthyThreshold =
+        tonumber(
+            config.HealthyThreshold
+        )
+        or 60
+
+
+    local weakThreshold =
+        tonumber(
+            config.WeakThreshold
+        )
+        or 30
+
+
+    local chance
+
+
+    if remainingBlood >
+        healthyThreshold then
+
+
+        chance =
+            tonumber(
+                config.HealthyChance
+            )
+            or 80
+
+
+    elseif remainingBlood >
+        weakThreshold then
+
+
+        chance =
+            tonumber(
+                config.WeakChance
+            )
+            or 50
+
+
+    else
+
+
+        chance =
+            tonumber(
+                config.CriticalChance
+            )
+            or 20
+    end
+
+
+    chance =
+        Clamp(
+            chance,
+            0,
+            100
+        )
+
+
+    local roll =
+        math.random(
+            1,
+            100
+        )
+
+
+    return roll <= chance,
+        roll,
+        chance
+end
+
+
+---------------------------------------------------------
+-- PARTIAL WITNESS REACTIONS
+---------------------------------------------------------
+
+local function SendPartialWitnessReactions(
+    vampireSource,
+    victimNetId,
+    scan,
+    callerNetId
+)
+    local witnessConfig =
+        GetWitnessConfig()
+
+
+    local panicConfig =
+        witnessConfig.Panic
+        or {}
+
+
+    local callerConfig =
+        witnessConfig.Caller
+        or {}
+
+
+    for i = 1,
+        #scan.witnesses do
+
+
+        local witnessData =
+            scan.witnesses[i]
+
+
+        local mode =
+            'PANIC'
+
+
+        if callerNetId
+            and witnessData.netId ==
+                callerNetId then
+
+
+            mode =
+                'CALLER'
+        end
+
+
+        local shouldSend =
+            false
+
+
+        if mode ==
+            'CALLER' then
+
+
+            shouldSend =
+                callerConfig.Enabled
+                == true
+
+
+        elseif mode ==
+            'PANIC' then
+
+
+            shouldSend =
+                panicConfig.Enabled
+                == true
+        end
+
+
+        if shouldSend then
+
+
+            local reactionSource =
+                GetReactionSource(
+                    witnessData.entity,
+                    vampireSource
+                )
+
+
+            if reactionSource then
+
+
+                TriggerClientEvent(
+                    'lb-vampire:client:npcWitnessReaction',
+
+                    reactionSource,
+
+                    {
+                        victimNetId =
+                            victimNetId,
+
+                        witnessNetId =
+                            witnessData.netId,
+
+                        mode =
+                            mode
+                    }
+                )
+            end
+        end
+    end
+end
+
+
+---------------------------------------------------------
+-- HANDLE DEPLETION
 ---------------------------------------------------------
 
 function NPCWitness.HandleDepletion(
@@ -1124,10 +1721,6 @@ function NPCWitness.HandleDepletion(
     end
 
 
-    -----------------------------------------------------
-    -- VICTIM ENTITY
-    -----------------------------------------------------
-
     local victim =
         NetworkGetEntityFromNetworkId(
             victimNetId
@@ -1152,10 +1745,6 @@ function NPCWitness.HandleDepletion(
         )
 
 
-    -----------------------------------------------------
-    -- WORLD SCAN
-    -----------------------------------------------------
-
     local scan =
         ScanWorld(
             victim,
@@ -1163,25 +1752,24 @@ function NPCWitness.HandleDepletion(
         )
 
 
-    -----------------------------------------------------
-    -- DISPATCH ENABLED?
-    -----------------------------------------------------
-
     local dispatchConfig =
         GetDispatchConfig()
 
 
-    local dispatchEnabled =
-        dispatchConfig.Enabled
-        == true
+    local dispatchSuccessful =
+        false
 
-
-    -----------------------------------------------------
-    -- CHANCE
-    -----------------------------------------------------
 
     local chance =
         0
+
+
+    local roll =
+        nil
+
+
+    local hour =
+        GetWorldHour()
 
 
     local breakdown = {
@@ -1193,19 +1781,8 @@ function NPCWitness.HandleDepletion(
     }
 
 
-    local hour =
-        GetWorldHour()
-
-
-    local roll =
-        nil
-
-
-    local dispatchSuccessful =
-        false
-
-
-    if dispatchEnabled then
+    if dispatchConfig.Enabled ==
+        true then
 
 
         chance,
@@ -1228,24 +1805,22 @@ function NPCWitness.HandleDepletion(
     end
 
 
-    -----------------------------------------------------
-    -- CALLER
-    --
-    -- Dispatch gerçekten başarılı olacaksa ve
-    -- witness mevcutsa caller seçiyoruz.
-    -----------------------------------------------------
+    local witnessConfig =
+        GetWitnessConfig()
+
+
+    local callerConfig =
+        witnessConfig.Caller
+        or {}
+
 
     local callerNetId =
         nil
 
 
-    local witnessConfig =
-        GetWitnessConfig()
-
-
     if dispatchSuccessful
-        and witnessConfig.Enabled == true
-        and witnessConfig.Caller == true
+        and callerConfig.Enabled ==
+            true
         and #scan.witnesses > 0 then
 
 
@@ -1255,31 +1830,21 @@ function NPCWitness.HandleDepletion(
     end
 
 
-    -----------------------------------------------------
-    -- CLIENT REACTIONS
-    --
-    -- Kurban ölür.
-    -- Witness varsa kaçar.
-    -- Dispatch başarılı + caller varsa telefon anim.
-    -----------------------------------------------------
-
-    SendReaction(
+    SendReactions(
         vampireSource,
+        victim,
         victimNetId,
         scan,
         callerNetId
     )
 
 
-    -----------------------------------------------------
-    -- DEBUG
-    -----------------------------------------------------
-
     if Config.Debug then
+
 
         print(
             (
-                '^5[LB-VAMPIRE]^7 NPC Dispatch Analysis | Witnesses: %s | Peds: %s | Vehicles: %s | Hour: %s'
+                '^5[LB-VAMPIRE]^7 NPC Dispatch Analysis | Witnesses:%s | BusyPeds:%s | SecludedPeds:%s | Vehicles:%s | Hour:%s'
             ):format(
 
                 tostring(
@@ -1287,11 +1852,15 @@ function NPCWitness.HandleDepletion(
                 ),
 
                 tostring(
-                    scan.nearbyPeds
+                    scan.busyPeds
                 ),
 
                 tostring(
-                    scan.nearbyVehicles
+                    scan.secludedPeds
+                ),
+
+                tostring(
+                    scan.secludedVehicles
                 ),
 
                 tostring(
@@ -1302,12 +1871,13 @@ function NPCWitness.HandleDepletion(
         )
 
 
-        if dispatchEnabled then
+        if dispatchConfig.Enabled ==
+            true then
 
 
             print(
                 (
-                    '^5[LB-VAMPIRE]^7 Chance: %s%% | Roll: %s | Dispatch: %s | Base:%s Witness:%s Busy:%s Night:%s Secluded:%s'
+                    '^5[LB-VAMPIRE]^7 NPC Dispatch Chance | Final:%s%% | Roll:%s | Dispatch:%s | Base:%s Witness:%s Busy:%s Night:%s Secluded:%s'
                 ):format(
 
                     tostring(
@@ -1343,21 +1913,9 @@ function NPCWitness.HandleDepletion(
                     )
                 )
             )
-
-
-        else
-
-
-            print(
-                '^3[LB-VAMPIRE]^7 NPC dispatch disabled by config.'
-            )
         end
     end
 
-
-    -----------------------------------------------------
-    -- NO DISPATCH
-    -----------------------------------------------------
 
     if dispatchSuccessful ~=
         true then
@@ -1375,20 +1933,10 @@ function NPCWitness.HandleDepletion(
                     roll,
 
                 witnesses =
-                    #scan.witnesses,
-
-                nearbyPeds =
-                    scan.nearbyPeds,
-
-                nearbyVehicles =
-                    scan.nearbyVehicles
+                    #scan.witnesses
             }
     end
 
-
-    -----------------------------------------------------
-    -- DELAY
-    -----------------------------------------------------
 
     local delayConfig
 
@@ -1397,7 +1945,7 @@ function NPCWitness.HandleDepletion(
 
 
         delayConfig =
-            witnessConfig.CallerDelay
+            callerConfig.DispatchDelay
             or {}
 
 
@@ -1410,32 +1958,17 @@ function NPCWitness.HandleDepletion(
     end
 
 
-    local defaultMin =
-        callerNetId
-        and 4000
-        or 12000
-
-
-    local defaultMax =
-        callerNetId
-        and 10000
-        or 25000
-
-
     local delay =
         RandomBetween(
 
             delayConfig.Min
-            or defaultMin,
+            or 0,
 
             delayConfig.Max
-            or defaultMax
+            or delayConfig.Min
+            or 0
         )
 
-
-    -----------------------------------------------------
-    -- DELAYED DISPATCH
-    -----------------------------------------------------
 
     SetTimeout(
         delay,
@@ -1443,16 +1976,32 @@ function NPCWitness.HandleDepletion(
         function()
 
 
+            if callerNetId
+                and not IsCallerStillValid(
+                    callerNetId
+                ) then
+
+
+                if Config.Debug then
+
+                    print(
+                        '^3[LB-VAMPIRE]^7 NPC dispatch cancelled: caller no longer available.'
+                    )
+                end
+
+
+                return
+            end
+
+
             SendDispatch(
-                victimCoords
+                vampireSource,
+                victimCoords,
+                'npc_death'
             )
         end
     )
 
-
-    -----------------------------------------------------
-    -- RESULT
-    -----------------------------------------------------
 
     return true,
         {
@@ -1472,224 +2021,486 @@ function NPCWitness.HandleDepletion(
                 callerNetId,
 
             witnesses =
-                #scan.witnesses,
-
-            nearbyPeds =
-                scan.nearbyPeds,
-
-            nearbyVehicles =
-                scan.nearbyVehicles
+                #scan.witnesses
         }
 end
 
 
 ---------------------------------------------------------
--- DEBUG NPC DEPLETION
---
--- client/npc_reactions.lua içindeki
--- /vamnpcdeadtest bunu çağırır.
+-- HANDLE RELEASE / PARTIAL FEEDING INCIDENT
 ---------------------------------------------------------
 
-RegisterNetEvent(
-    'lb-vampire:server:debugDepleteNPC',
-
-    function(
-        netId
-    )
-        -------------------------------------------------
-        -- DEBUG ONLY
-        -------------------------------------------------
-
-        if Config.Debug ~= true then
-
-            return
-        end
+function NPCWitness.HandleRelease(
+    vampireSource,
+    victimNetId,
+    incidentData
+)
+    vampireSource =
+        tonumber(
+            vampireSource
+        )
 
 
-        local src =
-            source
+    victimNetId =
+        tonumber(
+            victimNetId
+        )
 
 
-        -------------------------------------------------
-        -- VAMPIRE VALIDATION
-        -------------------------------------------------
-
-        if not LBVampire.Vampires
-            or not LBVampire.Vampires
-                .IsVampire
-            or not LBVampire.Vampires
-                .IsVampire(
-                    src
-                ) then
+    incidentData =
+        incidentData or {}
 
 
-            return
-        end
+    if not vampireSource
+        or not victimNetId then
 
 
-        netId =
-            tonumber(
-                netId
-            )
+        return false,
+            'invalid_arguments'
+    end
 
 
-        if not netId
-            or netId <= 0 then
+    local partialConfig =
+        GetPartialIncidentConfig()
 
 
-            return
-        end
+    if partialConfig.Enabled ~=
+        true then
 
 
-        -------------------------------------------------
-        -- ENTITY
-        -------------------------------------------------
-
-        local entity =
-            NetworkGetEntityFromNetworkId(
-                netId
-            )
-
-
-        if not entity
-            or entity == 0
-            or not DoesEntityExist(
-                entity
-            ) then
+        return true,
+            {
+                eligible = false,
+                dispatched = false,
+                victimCaller = false
+            }
+    end
 
 
-            return
-        end
+    local victim =
+        NetworkGetEntityFromNetworkId(
+            victimNetId
+        )
 
 
-        -------------------------------------------------
-        -- PLAYER PED
-        -------------------------------------------------
-
-        local playerPed =
-            GetPlayerPed(
-                src
-            )
-
-
-        if not playerPed
-            or playerPed == 0
-            or not DoesEntityExist(
-                playerPed
-            ) then
+    if not victim
+        or victim == 0
+        or not DoesEntityExist(
+            victim
+        )
+        or GetEntityHealth(
+            victim
+        ) <= 0 then
 
 
-            return
-        end
+        return false,
+            'victim_not_found'
+    end
 
 
-        -------------------------------------------------
-        -- DISTANCE SECURITY
-        -------------------------------------------------
-
-        local playerCoords =
-            GetEntityCoords(
-                playerPed
-            )
+    local severity,
+        baseChance,
+        recentLoss =
+        GetPartialSeverity(
+            incidentData
+        )
 
 
-        local entityCoords =
-            GetEntityCoords(
-                entity
-            )
+    -----------------------------------------------------
+    -- Çok kısa temas. Reaksiyon normal release tarafında
+    -- devam eder ama suç/dispatch olayı oluşturulmaz.
+    -----------------------------------------------------
+
+    if not severity then
 
 
-        local distance =
-            Distance(
-                playerCoords,
-                entityCoords
-            )
+        if Config.Debug then
 
+            print(
+                (
+                    '^5[LB-VAMPIRE]^7 NPC Partial Incident ignored | NetID:%s | SessionLoss:%.2f | RecentLoss:%.2f | Minimum:%.2f'
+                ):format(
+                    tostring(
+                        victimNetId
+                    ),
 
-        if distance >
-            5.0 then
-
-
-            if Config.Debug then
-
-                print(
-                    (
-                        '^3[LB-VAMPIRE]^7 NPC depletion debug rejected: too far | %.2fm'
-                    ):format(
-                        distance
+                    tonumber(
+                        incidentData.sessionLoss
                     )
+                    or 0.0,
+
+                    tonumber(
+                        recentLoss
+                    )
+                    or 0.0,
+
+                    tonumber(
+                        partialConfig.MinimumBloodLoss
+                    )
+                    or 7.0
                 )
-            end
-
-
-            return
+            )
         end
 
 
-        -------------------------------------------------
-        -- NPC BLOOD MODULE
-        -------------------------------------------------
+        return true,
+            {
+                eligible = false,
+                dispatched = false,
+                victimCaller = false,
+                recentLoss = recentLoss
+            }
+    end
 
-        if not LBVampire.NPCBlood
-            or not LBVampire.NPCBlood.Set then
+
+    local victimCoords =
+        GetEntityCoords(
+            victim
+        )
+
+
+    local scan =
+        ScanWorld(
+            victim,
+            victimCoords
+        )
+
+
+    local dispatchConfig =
+        GetDispatchConfig()
+
+
+    local dispatchSuccessful =
+        false
+
+
+    local chance =
+        0
+
+
+    local roll =
+        nil
+
+
+    local hour =
+        GetWorldHour()
+
+
+    local breakdown = {
+        base = 0,
+        witness = 0,
+        busy = 0,
+        night = 0,
+        secluded = 0
+    }
+
+
+    if dispatchConfig.Enabled ==
+        true then
+
+
+        chance,
+        breakdown,
+        hour =
+            CalculateDispatchChance(
+                scan,
+                baseChance,
+                partialConfig.Modifiers
+                or {}
+            )
+
+
+        roll =
+            math.random(
+                1,
+                100
+            )
+
+
+        dispatchSuccessful =
+            roll <= chance
+    end
+
+
+    local witnessConfig =
+        GetWitnessConfig()
+
+
+    local callerConfig =
+        witnessConfig.Caller
+        or {}
+
+
+    local victimCaller =
+        false
+
+
+    local victimCallerRoll =
+        nil
+
+
+    local victimCallerChance =
+        0
+
+
+    local callerNetId =
+        nil
+
+
+    if dispatchSuccessful then
+
+
+        victimCaller,
+        victimCallerRoll,
+        victimCallerChance =
+            RollVictimCaller(
+                incidentData.remainingBlood
+            )
+
+
+        if not victimCaller
+            and callerConfig.Enabled ==
+                true
+            and #scan.witnesses > 0 then
+
+
+            callerNetId =
+                scan.witnesses[1]
+                    .netId
+        end
+    end
+
+
+    -----------------------------------------------------
+    -- Witness'lar olay ciddi ise dispatch çıkmasa bile
+    -- paniğe kapılabilir. Kurbanın release reaksiyonu ise
+    -- npc_feeding.lua tarafından ayrı gönderilir.
+    -----------------------------------------------------
+
+    SendPartialWitnessReactions(
+        vampireSource,
+        victimNetId,
+        scan,
+        callerNetId
+    )
+
+
+    if Config.Debug then
+
+
+        print(
+            (
+                '^5[LB-VAMPIRE]^7 NPC Partial Dispatch Analysis | Severity:%s | SessionLoss:%.2f | RecentLoss:%.2f | Remaining:%.2f | Witnesses:%s | BusyPeds:%s | SecludedPeds:%s | Vehicles:%s | Hour:%s'
+            ):format(
+                tostring(
+                    severity
+                ),
+
+                tonumber(
+                    incidentData.sessionLoss
+                )
+                or 0.0,
+
+                tonumber(
+                    recentLoss
+                )
+                or 0.0,
+
+                tonumber(
+                    incidentData.remainingBlood
+                )
+                or 0.0,
+
+                tostring(
+                    #scan.witnesses
+                ),
+
+                tostring(
+                    scan.busyPeds
+                ),
+
+                tostring(
+                    scan.secludedPeds
+                ),
+
+                tostring(
+                    scan.secludedVehicles
+                ),
+
+                tostring(
+                    hour
+                    or 'unknown'
+                )
+            )
+        )
+
+
+        if dispatchConfig.Enabled ==
+            true then
 
 
             print(
-                '^1[LB-VAMPIRE]^7 NPC Blood module unavailable.'
-            )
+                (
+                    '^5[LB-VAMPIRE]^7 NPC Partial Dispatch Chance | Final:%s%% | Roll:%s | Dispatch:%s | Base:%s Witness:%s Busy:%s Night:%s Secluded:%s | VictimCaller:%s (%s/%s)'
+                ):format(
+                    tostring(
+                        chance
+                    ),
 
+                    tostring(
+                        roll
+                    ),
 
-            return
-        end
+                    tostring(
+                        dispatchSuccessful
+                    ),
 
+                    tostring(
+                        breakdown.base
+                    ),
 
-        -------------------------------------------------
-        -- BLOOD -> ZERO
-        -------------------------------------------------
+                    tostring(
+                        breakdown.witness
+                    ),
 
-        local success,
-            result =
-            LBVampire.NPCBlood.Set(
-                netId,
-                0
-            )
+                    tostring(
+                        breakdown.busy
+                    ),
 
+                    tostring(
+                        breakdown.night
+                    ),
 
-        if success ~= true then
+                    tostring(
+                        breakdown.secluded
+                    ),
 
+                    tostring(
+                        victimCaller
+                    ),
 
-            if Config.Debug then
+                    tostring(
+                        victimCallerRoll
+                        or '-'
+                    ),
 
-                print(
-                    (
-                        '^1[LB-VAMPIRE]^7 NPC depletion failed | Reason: %s'
-                    ):format(
-                        tostring(
-                            result
-                        )
+                    tostring(
+                        victimCallerChance
                     )
                 )
+            )
+        end
+    end
+
+
+    if dispatchSuccessful ~=
+        true then
+
+
+        return true,
+            {
+                eligible = true,
+                severity = severity,
+                dispatched = false,
+                victimCaller = false,
+                chance = chance,
+                roll = roll,
+                witnesses = #scan.witnesses,
+                recentLoss = recentLoss
+            }
+    end
+
+
+    local delayConfig
+
+
+    if victimCaller
+        or callerNetId then
+
+
+        delayConfig =
+            callerConfig.DispatchDelay
+            or {}
+
+
+    else
+
+
+        delayConfig =
+            dispatchConfig.AnonymousDelay
+            or {}
+    end
+
+
+    local delay =
+        RandomBetween(
+
+            delayConfig.Min
+            or 0,
+
+            delayConfig.Max
+            or delayConfig.Min
+            or 0
+        )
+
+
+    local callerCheckNetId =
+        victimCaller
+        and victimNetId
+        or callerNetId
+
+
+    SetTimeout(
+        delay,
+
+        function()
+
+
+            if callerCheckNetId
+                and not IsCallerStillValid(
+                    callerCheckNetId
+                ) then
+
+
+                if Config.Debug then
+
+                    print(
+                        '^3[LB-VAMPIRE]^7 NPC partial dispatch cancelled: caller no longer available.'
+                    )
+                end
+
+
+                return
             end
 
 
-            return
+            SendDispatch(
+                vampireSource,
+                victimCoords,
+                'suspicious'
+            )
         end
+    )
 
 
-        -------------------------------------------------
-        -- WITNESS / REACTION / DISPATCH
-        -------------------------------------------------
-
-        NPCWitness.HandleDepletion(
-            src,
-            netId
-        )
-    end
-)
+    return true,
+        {
+            eligible = true,
+            severity = severity,
+            dispatched = true,
+            victimCaller = victimCaller,
+            chance = chance,
+            roll = roll,
+            delay = delay,
+            callerNetId = callerNetId,
+            witnesses = #scan.witnesses,
+            recentLoss = recentLoss
+        }
+end
 
 
 ---------------------------------------------------------
--- EXPORT
+-- EXPORTS
 ---------------------------------------------------------
 
 exports(
@@ -1703,6 +2514,24 @@ exports(
         return NPCWitness.HandleDepletion(
             vampireSource,
             victimNetId
+        )
+    end
+)
+
+
+exports(
+    'HandleNPCFeedingRelease',
+
+    function(
+        vampireSource,
+        victimNetId,
+        incidentData
+    )
+
+        return NPCWitness.HandleRelease(
+            vampireSource,
+            victimNetId,
+            incidentData
         )
     end
 )

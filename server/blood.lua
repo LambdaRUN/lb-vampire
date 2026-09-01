@@ -116,7 +116,7 @@ local function ProcessThresholds(state)
             )
         end
 
-        -- Torpor Faz 5'te burada devreye girecek.
+        -- 5D Torpor transition is handled after the Blood mutation.
     end
 end
 
@@ -180,6 +180,10 @@ function LBVampire.Blood.Set(
     end
 
     SyncState(state)
+
+    if LBVampire.Torpor and LBVampire.Torpor.OnBloodChanged then
+        LBVampire.Torpor.OnBloodChanged(source, previousBlood, state.blood)
+    end
 
     return true, state, previousBlood
 end

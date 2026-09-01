@@ -25,3 +25,8 @@ CREATE TABLE IF NOT EXISTS `vampire_human_state` (
 
 ALTER TABLE vampire_characters
 ADD COLUMN IF NOT EXISTS preferred_blood_type VARCHAR(3) NULL AFTER blood;
+
+ALTER TABLE vampire_characters
+ADD COLUMN IF NOT EXISTS torpor_stage TINYINT NOT NULL DEFAULT 0 AFTER can_embrace,
+ADD COLUMN IF NOT EXISTS collapse_started_at BIGINT NULL AFTER torpor_stage,
+ADD COLUMN IF NOT EXISTS kin_calls TINYINT NOT NULL DEFAULT 0 AFTER collapse_started_at;

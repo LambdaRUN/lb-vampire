@@ -1,0 +1,550 @@
+/* =========================================================
+   5C - BLOOD SIGIL ABILITY MENU
+========================================================= */
+
+.ability-menu {
+    --sigil-accent: #d73542;
+    --sigil-accent-hot: #ff5461;
+    --sigil-dark: rgba(7, 7, 9, 0.93);
+    --sigil-line: rgba(214, 53, 66, 0.22);
+    --sigil-muted: rgba(226, 220, 217, 0.48);
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    cursor: none;
+    transition: opacity 110ms ease, visibility 110ms ease;
+    overflow: hidden;
+    font-family: Inter, Arial, sans-serif;
+}
+
+.ability-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.ability-menu,
+.ability-menu * {
+    cursor: none !important;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.ability-menu-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    /*
+        FiveM CEF: fullscreen backdrop-filter transparan oyun yüzeyini
+        bazı sistemlerde siyah compositor katmanı gibi render edebiliyor.
+        Bu katmanda filtre kullanmıyoruz; oyun görüntüsü doğrudan görünür kalır.
+    */
+    background: transparent;
+}
+
+.ability-menu-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    /*
+        FiveM CEF üzerinde büyük fullscreen inset box-shadow siyah blok
+        oluşturabildiği için vignette yalnız transparan gradient kullanır.
+    */
+    background: transparent;
+}
+
+.ability-sigil-shell {
+    position: relative;
+    width: min(78vw, 1120px);
+    height: min(78vh, 760px);
+    min-width: 680px;
+    min-height: 580px;
+    transform: scale(0.94);
+    opacity: 0;
+    transition: transform 145ms cubic-bezier(.2,.8,.2,1), opacity 120ms ease;
+}
+
+.ability-menu.is-open .ability-sigil-shell {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.ability-sigil-stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(62vw, 72vh, 760px);
+    height: auto;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+
+    /*
+        Atmosfer yalnız Blood Sigil'in arkasında kalır. Full-screen CEF
+        filter/shadow kullanılmaz; gradient kenarlara doğru tamamen şeffaflaşır.
+    */
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(10, 3, 5, 0.90) 20%,
+        rgba(12, 4, 7, 0.90) 62%,
+        rgba(24, 6, 11, 0.90) 74%,
+        rgba(35, 8, 14, 0.90) 86%,
+        transparent 92%
+    );
+}
+
+.ability-sigil-stage::before,
+.ability-sigil-stage::after {
+    content: '';
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    border: 1px solid rgba(157, 41, 51, 0.19);
+    box-shadow:
+        0 0 48px rgba(146, 17, 30, 0.08),
+        inset 0 0 52px rgba(109, 8, 18, 0.07);
+    pointer-events: none;
+}
+
+.ability-sigil-stage::after {
+    inset: 19%;
+    border-style: dashed;
+    border-color: rgba(205, 61, 73, 0.11);
+    transform: rotate(22deg);
+}
+
+.ability-veins {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    filter: drop-shadow(0 0 7px rgba(163, 20, 31, 0.14));
+}
+
+.ability-vein {
+    stroke: rgba(116, 21, 30, 0.34);
+    stroke-width: 1.2;
+    fill: none;
+    transition: stroke 100ms ease, stroke-width 100ms ease, filter 100ms ease;
+}
+
+.ability-vein.is-hovered {
+    stroke: rgba(255, 74, 88, 0.92);
+    stroke-width: 2.1;
+    filter: drop-shadow(0 0 7px rgba(255, 50, 66, 0.65));
+    animation: veinPulse 700ms ease-in-out infinite alternate;
+}
+
+.ability-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: clamp(122px, 9.7vw, 162px);
+    height: clamp(122px, 9.7vw, 162px);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(206, 41, 55, 0.28), rgba(23, 5, 8, 0.92) 58%, rgba(2, 2, 3, 0.96) 78%);
+    border: 1px solid rgba(218, 57, 71, 0.42);
+    box-shadow:
+        0 0 0 9px rgba(104, 12, 21, 0.09),
+        0 0 48px rgba(177, 25, 38, 0.22),
+        inset 0 0 36px rgba(206, 35, 49, 0.16);
+}
+
+.ability-core::before,
+.ability-core::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(210, 57, 69, 0.24);
+}
+
+.ability-core::before {
+    inset: -17px;
+    animation: coreSpin 18s linear infinite;
+    border-style: dashed;
+}
+
+.ability-core::after {
+    inset: 10px;
+    box-shadow: inset 0 0 22px rgba(255, 55, 70, 0.14);
+}
+
+.ability-core-mark {
+    width: 54%;
+    height: 54%;
+    opacity: .92;
+    filter: drop-shadow(0 0 9px rgba(255, 50, 65, .45));
+}
+
+.ability-core-blood {
+    position: absolute;
+    left: 50%;
+    bottom: 13px;
+    transform: translateX(-50%);
+    color: rgba(239, 220, 216, .62);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    white-space: nowrap;
+}
+
+.ability-core-blood strong {
+    color: #ef5360;
+    font-weight: 800;
+}
+
+.ability-core-mark path {
+    fill: none;
+    stroke: #ef5360;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ability-nodes {
+    position: absolute;
+    inset: 0;
+}
+
+.ability-node {
+    position: absolute;
+    width: clamp(88px, 7vw, 114px);
+    height: clamp(88px, 7vw, 114px);
+    transform: translate(-50%, -50%) scale(1);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition:
+        transform 95ms ease,
+        filter 95ms ease,
+        opacity 120ms ease;
+}
+
+.ability-node-disc {
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(92, 16, 24, .42), rgba(12, 11, 14, .96) 62%);
+    border: 1px solid rgba(192, 54, 66, .36);
+    box-shadow:
+        inset 0 0 22px rgba(154, 29, 42, .12),
+        0 0 0 5px rgba(47, 7, 12, .22);
+}
+
+.ability-node-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ability-node-ring .track {
+    fill: none;
+    stroke: rgba(255,255,255,.06);
+    stroke-width: 2.4;
+}
+
+.ability-node-ring .cooldown {
+    fill: none;
+    stroke: rgba(206, 54, 68, .62);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-dasharray: 289;
+    stroke-dashoffset: 289;
+    transition: stroke-dashoffset 180ms linear;
+}
+
+.ability-node-icon {
+    position: relative;
+    z-index: 3;
+    width: 44%;
+    height: 44%;
+    color: rgba(235, 226, 222, .77);
+    filter: drop-shadow(0 0 5px rgba(0,0,0,.8));
+    transition: color 95ms ease, transform 95ms ease, filter 95ms ease;
+}
+
+.ability-node-icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.ability-node-icon path,
+.ability-node-icon circle,
+.ability-node-icon line,
+.ability-node-icon polyline {
+    vector-effect: non-scaling-stroke;
+}
+
+.ability-node-label {
+    position: absolute;
+    top: calc(100% + 9px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 170px;
+    text-align: center;
+    color: rgba(231, 223, 220, .76);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(11px, .82vw, 14px);
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px #000;
+    transition: color 95ms ease, transform 95ms ease;
+}
+
+.ability-node-state {
+    position: absolute;
+    top: calc(100% + 28px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 180px;
+    text-align: center;
+    color: rgba(211, 72, 84, .7);
+    font-size: 10px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.ability-node.is-hovered {
+    transform: translate(-50%, -50%) scale(1.13);
+    filter: drop-shadow(0 0 16px rgba(228, 38, 54, .28));
+    z-index: 10;
+}
+
+.ability-node.is-hovered .ability-node-disc {
+    border-color: rgba(255, 82, 95, .86);
+    box-shadow:
+        inset 0 0 30px rgba(220, 41, 58, .24),
+        0 0 0 5px rgba(116, 11, 24, .2),
+        0 0 25px rgba(236, 40, 57, .32);
+}
+
+.ability-node.is-hovered .ability-node-icon {
+    color: #ff5c69;
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 8px rgba(255, 61, 77, .65));
+}
+
+.ability-node.is-hovered .ability-node-label {
+    color: #fff0eb;
+    transform: translateX(-50%) translateY(2px);
+}
+
+.ability-node.is-cooldown {
+    opacity: .72;
+}
+
+.ability-node.is-cooldown .ability-node-icon {
+    color: rgba(191, 184, 181, .46);
+}
+
+.ability-node.is-insufficient .ability-node-disc {
+    border-color: rgba(132, 86, 72, .32);
+    background: radial-gradient(circle, rgba(77, 42, 35, .26), rgba(9, 9, 11, .96) 67%);
+}
+
+.ability-node.is-insufficient .ability-node-icon {
+    color: rgba(165, 119, 105, .55);
+}
+
+.ability-node.is-locked {
+    opacity: .34;
+}
+
+.ability-node.is-locked .ability-node-disc {
+    border-style: dashed;
+    border-color: rgba(134, 119, 116, .24);
+}
+
+.ability-node.is-active .ability-node-disc {
+    border-color: rgba(255, 95, 72, .74);
+    box-shadow: 0 0 22px rgba(255, 59, 47, .22), inset 0 0 25px rgba(255, 56, 50, .13);
+}
+
+.ability-inspector {
+    position: absolute;
+    right: clamp(-155px, -8vw, -105px);
+    top: 50%;
+    width: clamp(245px, 20vw, 315px);
+    min-height: 260px;
+    transform: translateY(-50%) translateX(8px);
+    padding: 25px 24px 22px;
+    background:
+        linear-gradient(180deg, rgba(11, 10, 12, .91), rgba(5, 5, 7, .93));
+    border: 1px solid rgba(150, 53, 62, .31);
+    clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+    box-shadow: 0 16px 45px rgba(0,0,0,.38), inset 0 0 32px rgba(111, 16, 26, .07);
+}
+
+.ability-inspector::before,
+.ability-inspector::after {
+    content: '';
+    position: absolute;
+    height: 1px;
+    left: 22px;
+    right: 22px;
+    background: linear-gradient(90deg, transparent, rgba(226, 55, 69, .48), transparent);
+}
+
+.ability-inspector::before { top: 13px; }
+.ability-inspector::after { bottom: 13px; }
+
+.ability-inspector-eyebrow {
+    color: rgba(219, 58, 71, .85);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .23em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.ability-inspector-title {
+    color: #f2e9e4;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(24px, 2vw, 31px);
+    letter-spacing: .035em;
+    line-height: 1.05;
+    margin-bottom: 13px;
+}
+
+.ability-inspector-description {
+    color: rgba(229, 221, 217, .62);
+    font-size: 12px;
+    line-height: 1.55;
+    min-height: 58px;
+}
+
+.ability-inspector-separator {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(202, 47, 59, .38), transparent);
+    margin: 18px 0 14px;
+}
+
+.ability-inspector-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 29px;
+    color: rgba(231, 222, 218, .66);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ability-inspector-value {
+    color: #f4e9e4;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    letter-spacing: .02em;
+}
+
+.ability-inspector-value.is-blood { color: #ef5361; }
+
+.ability-inspector-status {
+    margin-top: 15px;
+    min-height: 24px;
+    color: rgba(223, 69, 80, .9);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ability-inspector-hint {
+    margin-top: 12px;
+    color: rgba(228, 221, 217, .42);
+    font-size: 10px;
+    letter-spacing: .06em;
+}
+
+.ability-wisp {
+    position: fixed;
+    z-index: 9010;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff0e7 0 8%, #ff5261 18%, rgba(218, 38, 54, .82) 38%, rgba(186, 16, 32, .12) 72%, transparent 74%);
+    box-shadow:
+        0 0 12px rgba(255, 65, 80, .9),
+        0 0 28px rgba(215, 24, 41, .54);
+    transition: opacity 80ms ease;
+}
+
+.ability-menu.is-open .ability-wisp { opacity: 1; }
+
+.ability-wisp::before,
+.ability-wisp::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 2px;
+    transform-origin: left center;
+    transform: translateY(-50%) rotate(165deg);
+    background: linear-gradient(90deg, rgba(238, 58, 73, .7), transparent);
+    filter: blur(.6px);
+}
+
+.ability-wisp::after {
+    width: 27px;
+    transform: translateY(-50%) rotate(195deg);
+    opacity: .58;
+}
+
+.ability-menu-footer {
+    position: absolute;
+    left: 50%;
+    bottom: -9px;
+    transform: translateX(-50%);
+    color: rgba(228, 220, 216, .37);
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.ability-menu-footer strong {
+    color: rgba(222, 61, 73, .8);
+    font-weight: 700;
+}
+
+@keyframes coreSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes veinPulse {
+    from { opacity: .64; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 1100px) {
+    .ability-sigil-shell {
+        width: 92vw;
+        min-width: 0;
+    }
+
+    .ability-inspector {
+        right: 1vw;
+        width: 235px;
+    }
+}

@@ -1,0 +1,147 @@
+/* =========================================================
+   5D - TORPOR STATUS CARD
+   Local-only surface: no fullscreen shadow/filter layers.
+========================================================= */
+
+.torpor-card {
+    position: fixed;
+    left: 50%;
+    bottom: 8.2vh;
+    transform: translate(-50%, 12px);
+    width: min(430px, 88vw);
+    padding: 16px 18px 15px;
+    border: 1px solid rgba(196, 47, 58, 0.38);
+    border-radius: 12px;
+    background:
+        linear-gradient(135deg, rgba(24, 8, 11, 0.94), rgba(8, 7, 9, 0.92)),
+        radial-gradient(circle at 15% 0%, rgba(161, 28, 40, 0.16), transparent 58%);
+    color: #f0e8e5;
+    font-family: Inter, Arial, sans-serif;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+    z-index: 8700;
+}
+
+.torpor-card.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+.torpor-card::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(235, 67, 79, 0.72), transparent);
+}
+
+.torpor-eyebrow {
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(224, 83, 94, 0.84);
+    margin-bottom: 7px;
+}
+
+.torpor-main-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.torpor-title {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 25px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #f5eeea;
+}
+
+.torpor-timer {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    color: #db4b58;
+}
+
+.torpor-description {
+    margin-top: 8px;
+    color: rgba(234, 224, 220, 0.62);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.torpor-divider {
+    height: 1px;
+    margin: 13px 0 11px;
+    background: linear-gradient(90deg, rgba(163, 42, 51, 0.28), rgba(163, 42, 51, 0.08), transparent);
+}
+
+.torpor-action {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 26px;
+    color: rgba(239, 231, 227, 0.76);
+    font-size: 11px;
+    letter-spacing: 0.035em;
+}
+
+.torpor-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 25px;
+    height: 23px;
+    padding: 0 6px;
+    border: 1px solid rgba(218, 67, 78, 0.46);
+    border-radius: 5px;
+    color: #f4d9dc;
+    background: rgba(131, 23, 32, 0.18);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.torpor-action.is-used {
+    color: rgba(239, 231, 227, 0.34);
+}
+
+.torpor-action.is-used .torpor-key {
+    border-color: rgba(167, 154, 154, 0.18);
+    color: rgba(239, 231, 227, 0.36);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.torpor-card.is-partial {
+    border-color: rgba(204, 47, 60, 0.54);
+    background:
+        linear-gradient(135deg, rgba(27, 6, 9, 0.96), rgba(7, 6, 8, 0.95)),
+        radial-gradient(circle at 50% 0%, rgba(185, 25, 38, 0.18), transparent 62%);
+}
+
+.torpor-card.is-partial .torpor-title {
+    color: #ffd9dc;
+}
+
+.torpor-card.is-partial .torpor-timer {
+    display: none;
+}
+
+@media (max-width: 620px) {
+    .torpor-card {
+        bottom: 5.5vh;
+        padding: 14px 15px;
+    }
+
+    .torpor-title { font-size: 21px; }
+    .torpor-timer { font-size: 18px; }
+}

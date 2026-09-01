@@ -10,7 +10,7 @@ print(
 
 LBVampire = LBVampire or {}
 
-LBVampire.Version = '0.4.6'
+LBVampire.Version = '0.7.6'
 
 LBVampire.Runtime =
     LBVampire.Runtime or {}

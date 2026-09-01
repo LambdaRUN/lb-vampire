@@ -130,108 +130,63 @@ RegisterNetEvent(
 
 
 CreateThread(function()
-    local tickInterval =
-        tonumber(
-            Config.Sun.Drain.ServerTick
-        ) or 5000
-
-    tickInterval =
-        math.max(
-            tickInterval,
-            1000
-        )
+    local tickInterval = tonumber(Config.Sun.Drain.ServerTick) or 5000
+    tickInterval = math.max(tickInterval, 1000)
 
     while true do
         Wait(tickInterval)
 
         if Config.Sun.Enabled then
+            for citizenId, state in pairs(LBVampire.Runtime.Vampires) do
+                if state and state.source and GetPlayerName(state.source) then
+                    local sunState = state.sunState or 'SAFE'
+                    local drainInterval = nil
 
-            for citizenId, state in pairs(
-                LBVampire.Runtime.Vampires
-            ) do
-
-                if state
-                    and state.source
-                    and state.blood > 0
-                    and GetPlayerName(
-                        state.source
-                    ) then
-
-                    local sunState =
-                        state.sunState
-                        or 'SAFE'
-
-                    local drainInterval =
-                        nil
-
-                    if sunState ==
-                        'DIRECT' then
-
-                        drainInterval =
-                            tonumber(
-                                Config.Sun
-                                    .Drain
-                                    .DirectInterval
-                            )
-
-                    elseif sunState ==
-                        'REDUCED' then
-
-                        drainInterval =
-                            tonumber(
-                                Config.Sun
-                                    .Drain
-                                    .ReducedInterval
-                            )
+                    if sunState == 'DIRECT' then
+                        drainInterval = tonumber(Config.Sun.Drain.DirectInterval)
+                    elseif sunState == 'REDUCED' then
+                        drainInterval = tonumber(Config.Sun.Drain.ReducedInterval)
                     end
 
-                    if drainInterval
-                        and drainInterval > 0 then
+                    if drainInterval and drainInterval > 0 then
+                        state.sunDrainProgress = tonumber(state.sunDrainProgress) or 0.0
+                        state.sunDrainProgress = state.sunDrainProgress + (tickInterval / drainInterval)
 
-                        state.sunDrainProgress =
-                            tonumber(
-                                state.sunDrainProgress
-                            ) or 0.0
-
-                        state.sunDrainProgress =
-                            state.sunDrainProgress
-                            +
-                            (
-                                tickInterval /
-                                drainInterval
-                            )
-
-                        local drainAmount =
-                            math.floor(
-                                state.sunDrainProgress
-                            )
-
+                        local drainAmount = math.floor(state.sunDrainProgress)
                         if drainAmount > 0 then
+                            state.sunDrainProgress = state.sunDrainProgress - drainAmount
 
-                            state.sunDrainProgress =
-                                state.sunDrainProgress
-                                - drainAmount
+                            local multiplier = tonumber(
+                                Config.VampireDamage
+                                and Config.VampireDamage.Types
+                                and Config.VampireDamage.Types.SUNLIGHT
+                                and Config.VampireDamage.Types.SUNLIGHT.Multiplier
+                            ) or 1.0
 
-                            local success =
-                                LBVampire.Blood.Remove(
+                            local finalDamage = math.max(drainAmount * multiplier, 0)
+                            local bloodBefore = math.max(tonumber(state.blood) or 0, 0)
+                            local bloodDamage = math.min(bloodBefore, finalDamage)
+                            local healthOverflow = math.max(finalDamage - bloodDamage, 0)
+
+                            if bloodDamage > 0 then
+                                LBVampire.Blood.Remove(state.source, bloodDamage, false)
+                            end
+
+                            -- Sunlight bypasses normal armor. Once Blood is gone,
+                            -- only the overflow is sent to effective HP.
+                            if healthOverflow > 0 then
+                                TriggerClientEvent(
+                                    'lb-vampire:client:torpor:directHealthDamage',
                                     state.source,
-                                    drainAmount,
-                                    false
+                                    healthOverflow,
+                                    'SUNLIGHT'
                                 )
+                            end
 
-                            if success
-                                and Config.Debug then
-
-                                print(
-                                    (
-                                        '^5[LB-VAMPIRE]^7 Sun Blood drain: %s | State: %s | -%d | Blood: %.2f'
-                                    ):format(
-                                        citizenId,
-                                        sunState,
-                                        drainAmount,
-                                        state.blood
-                                    )
-                                )
+                            if Config.Debug then
+                                print(('^5[LB-VAMPIRE]^7 Sun drain: %s | State: %s | Blood -%.2f | HP -%.2f'):format(
+                                    citizenId, sunState, bloodDamage, healthOverflow
+                                ))
                             end
                         end
                     end

@@ -291,6 +291,47 @@ local function GetProviderObject(
 end
 
 
+local function GetAlertConfig(
+    kind
+)
+    local alerts =
+        GetConfig().Alerts
+        or {}
+
+
+    kind =
+        string.lower(
+            tostring(
+                kind
+                or 'suspicious'
+            )
+        )
+
+
+    if kind == 'npc_death'
+        or kind == 'npcdeath' then
+
+
+        return alerts.NPCDeath
+            or {}
+    end
+
+
+    if kind == 'beast_call'
+        or kind == 'beastcall'
+        or kind == 'animal' then
+
+
+        return alerts.BeastCall
+            or {}
+    end
+
+
+    return alerts.Suspicious
+        or {}
+end
+
+
 ---------------------------------------------------------
 -- SEND
 ---------------------------------------------------------
@@ -300,6 +341,28 @@ function Dispatch.Send(
 )
     data =
         data or {}
+
+
+    local alert =
+        GetAlertConfig(
+            data.kind
+        )
+
+
+    if not data.title then
+
+        data.title =
+            alert.Title
+            or 'Yeni İhbar'
+    end
+
+
+    if not data.description then
+
+        data.description =
+            alert.Description
+            or 'Şüpheli bir olay bildirildi.'
+    end
 
 
     local providerName =
@@ -515,25 +578,46 @@ if Config.Debug then
     -- DEBUG ALERT
     -----------------------------------------------------
 
-    RegisterCommand(
+    -----------------------------------------------------
+-- DEBUG ALERT
+-----------------------------------------------------
+
+RegisterCommand(
         'vamdispatchtest',
 
         function(
             source,
             args
         )
-            if source <=
-                0 then
+            print(
+                (
+                    '^5[LB-VAMPIRE]^7 /vamdispatchtest invoked | Source: %s'
+                ):format(
+                    tostring(source)
+                )
+            )
+
+
+            -------------------------------------------------
+            -- PLAYER ONLY
+            -------------------------------------------------
+
+            if not source
+                or source <= 0 then
 
 
                 print(
-                    '^3[LB-VAMPIRE]^7 /vamdispatchtest must be used by a player.'
+                    '^1[LB-VAMPIRE]^7 Dispatch test failed: command must be used by a player.'
                 )
 
 
                 return
             end
 
+
+            -------------------------------------------------
+            -- PLAYER PED
+            -------------------------------------------------
 
             local ped =
                 GetPlayerPed(
@@ -541,13 +625,36 @@ if Config.Debug then
                 )
 
 
+            print(
+                (
+                    '^5[LB-VAMPIRE]^7 Dispatch test ped: %s'
+                ):format(
+                    tostring(ped)
+                )
+            )
+
+
             if not ped
                 or ped == 0 then
+
+
+                print(
+                    (
+                        '^1[LB-VAMPIRE]^7 Dispatch test failed: GetPlayerPed returned %s for source %s.'
+                    ):format(
+                        tostring(ped),
+                        tostring(source)
+                    )
+                )
 
 
                 return
             end
 
+
+            -------------------------------------------------
+            -- COORDS
+            -------------------------------------------------
 
             local coords =
                 GetEntityCoords(
@@ -555,59 +662,115 @@ if Config.Debug then
                 )
 
 
-            local kind =
-                string.lower(
-                    tostring(
-                        args[1]
-                        or 'npc'
-                    )
+            if not coords then
+
+
+                print(
+                    '^1[LB-VAMPIRE]^7 Dispatch test failed: player coords unavailable.'
                 )
-
-
-            -------------------------------------------------
-            -- BEAST
-            -------------------------------------------------
-
-            if kind ==
-                'beast' then
-
-
-                Dispatch.Send({
-                    kind =
-                        'beast_call',
-
-                    title =
-                        'Vahşi Hayvan İhbarı',
-
-                    description =
-                        'Bölgede olağandışı vahşi hayvan hareketliliği bildirildi.',
-
-                    coords =
-                        coords
-                })
 
 
                 return
             end
 
 
+            print(
+                (
+                    '^5[LB-VAMPIRE]^7 Dispatch test coords: %.2f %.2f %.2f'
+                ):format(
+                    coords.x,
+                    coords.y,
+                    coords.z
+                )
+            )
+
+
+            -------------------------------------------------
+            -- KIND
+            -------------------------------------------------
+
+            local kind =
+                string.lower(
+                    tostring(
+                        args
+                        and args[1]
+                        or 'npc'
+                    )
+                )
+
+
+            local data
+
+
+            -------------------------------------------------
+            -- BEAST CALL
+            -------------------------------------------------
+
+            if kind == 'beast' then
+
+
+                data = {
+                    source =
+                        source,
+
+                    kind =
+                        'beast_call',
+
+                    coords = {
+                        x = coords.x,
+                        y = coords.y,
+                        z = coords.z
+                    }
+                }
+
+
             -------------------------------------------------
             -- NPC DEATH
             -------------------------------------------------
 
-            Dispatch.Send({
-                kind =
-                    'npc_death',
+            else
 
-                title =
-                    'Şüpheli Saldırı',
 
-                description =
-                    'Olası saldırı sonucu yerde hareketsiz bir şahıs bildirildi.',
+                data = {
+                    source =
+                        source,
 
-                coords =
-                    coords
-            })
+                    kind =
+                        'npc_death',
+
+                    coords = {
+                        x = coords.x,
+                        y = coords.y,
+                        z = coords.z
+                    }
+                }
+            end
+
+
+            -------------------------------------------------
+            -- SEND
+            -------------------------------------------------
+
+            local success,
+                result =
+                Dispatch.Send(
+                    data
+                )
+
+
+            print(
+                (
+                    '^5[LB-VAMPIRE]^7 Dispatch test result | Kind: %s | Success: %s | Result: %s'
+                ):format(
+                    tostring(kind),
+                    tostring(success),
+                    tostring(
+                        type(result) == 'table'
+                        and result.provider
+                        or result
+                    )
+                )
+            )
         end,
 
         false
